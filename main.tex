@@ -37,8 +37,6 @@ We introduce the $k$-localization complexity $\LC_k(D)$ of a probability distrib
     \item If we can generate our distribution $D$ in the style of \cite{vi10} with a circuit of size $s$, $m$ inputs, and maximum fan-in $k-1$, then $\LC_k(D) \leq s + m$.
 \end{enumerate}
 
-\p We note a structural analogy between $k$-localization and tensor network decompositions such as matrix product states (MPS) and projected entangled pair states (PEPS). In both frameworks, a high-dimensional object (a distribution or a tensor) is represented via local interactions mediated by auxiliary variables: in $k$-localization, latent variables enforce local marginal constraints, while in tensor networks, bond indices connect local tensors. The bond dimension in tensor networks plays a role analogous to the number of latent variables, and locality constraints in both settings control the expressiveness of the representation.
-
 \p We prove a number of other results about our model and the associated complexity measure which will make sense in the language of the paper, but we will begin by trying to motivate our model by thinking about the model in \cite{vi10} in a slightly different way.
 
 \section{Preliminaries}\label{sec:prelim}
@@ -47,7 +45,7 @@ We introduce the $k$-localization complexity $\LC_k(D)$ of a probability distrib
 \[ \rho(x) = \Pr_D(X_1 = x_1 \wedge X_2 = x_2 \wedge \cdots \wedge X_n = x_n), \]
 and a support $S = \{ x \in \{0, 1\}^n \mid \rho(x) > 0 \}$.
 
-\p \textbf{Circuits.} A Boolean circuit $C$ over $n$ inputs is a directed acyclic graph whose internal nodes (gates) compute Boolean functions of their inputs. The \emph{size} of $C$ is its number of gates, and the \emph{fan-in} of a gate is its number of inputs. We say $C$ \emph{recognizes} a set $S \subseteq \{0,1\}^n$ if $C(x) = 1 \Leftrightarrow x \in S$. Any circuit of size $s$ and arbitrary fan-in can be converted to a fan-in-$2$ circuit of size $O(s^2)$, and conversely, so circuit size is polynomially robust across fan-in choices.
+\p \textbf{Circuits.} A Boolean circuit $C$ over $n$ inputs is a directed acyclic graph whose internal nodes (gates) compute Boolean functions of their inputs. The \emph{size} of $C$ is its number of gates, and the \emph{fan-in} of a gate is its number of inputs. We say $C$ \emph{recognizes} a set $S \subseteq \{0,1\}^n$ if $C(x) = 1 \Leftrightarrow x \in S$. Any circuit of size $s$ and arbitrary fan-in can be converted to a fan-in-$2$ circuit of size $O(s^2)$, and conversely, so circuit size is polynomially robust across fan-in choices. (For bounded fan-in circuits, each gate of fan-in $r$ can be replaced by a balanced binary tree of $r-1$ fan-in-$2$ gates, giving an $O(s)$ conversion rather than $O(s^2)$.)
 
 \p \textbf{Nondeterministic circuits.} A nondeterministic Boolean circuit has $n$ input bits and $l$ additional nondeterministic input bits. It recognizes $S$ if $x \in S \Leftrightarrow \exists h \in \{0,1\}^l, C(x,h) = 1$. We define the nondeterministic circuit complexity
 \[ \mathrm{NSize}(S) = \min_C \big(l(C) + s(C)\big), \]
@@ -79,16 +77,18 @@ Let $T = \bigcap_{i \in [m]} \mathrm{supp}(\phi_i)$.
 
 \textit{$S \subseteq T$:} If $\rho(x) > 0$, then for every $i$ the $S_i$-marginal of $D$ must assign positive probability to $x_{S_i}$, so $\phi_i(x_{S_i}) > 0$ and $x \in \mathrm{supp}(\phi_i)$. Thus $x \in T$.
 
-\textit{$T \subseteq S$:} By the maximum entropy theorem \cite{wj08}, the optimizer takes the Gibbs form $\rho(x) = \exp\!\big(\lambda_0 + \sum_i \lambda_{i, x_{S_i}}\big)$ wherever it is positive, and is zero precisely on the complement of $T$. More precisely, consider the maximum entropy problem restricted to distributions supported on $T$. For every $x \in T$ and every $i$, we have $\phi_i(x_{S_i}) > 0$, so no marginal constraint forces $\rho(x) = 0$. The Gibbs form yields $\rho(x) > 0$ for all $x \in T$ (since the exponential is always positive). Therefore $T \subseteq S$.
+\textit{$T \subseteq S$:} We argue that the maximum entropy optimizer assigns positive probability to every point in $T$. Consider the maximum entropy problem restricted to distributions supported on $T$. The feasible set is nonempty (the constraints are consistent by assumption) and the entropy function is strictly concave, so the optimizer exists and is unique. By the theory of exponential families (see \cite[Theorem~3.4]{wj08}), the optimizer takes the Gibbs form
+\[ \rho(x) = \exp\!\Big(\lambda_0 + \sum_i \lambda_{i, x_{S_i}}\Big) \]
+for all $x \in T$, where $\lambda_0$ is a normalizing constant and the $\lambda_{i, x_{S_i}}$ are Lagrange multipliers for the marginal constraints. The critical observation is that the exponential function is strictly positive: for any real values of the multipliers, $\rho(x) > 0$ for all $x \in T$. This positivity is guaranteed because no marginal constraint forces $\rho(x) = 0$ for $x \in T$---indeed, for every $x \in T$ and every $i$, we have $\phi_i(x_{S_i}) > 0$ by definition of $T$, so the constraint $\phi_i$ is compatible with $x$ receiving positive mass. (This is the positivity condition that underlies the Hammersley--Clifford theorem \cite{hc71}: the Gibbs factorization is valid precisely on the positive part of the distribution.) Therefore $T \subseteq S$.
 \end{proof}
 
 \p The model of \cite{vi10} describes a distribution $D$ via a circuit $C$ with $n$ outputs and $m$ inputs, with the property that if we input $m$-bit strings, uniformly sampled from $\{0, 1\}^m$, the output bit-string is $x$ with the same probability that $x$ is sampled from $D$. Here, we will define a variant of this model and an associated complexity measure:
 
 \begin{definition}\label{def:generates}
 Given a circuit $C$ with $n$ outputs, $i(C)$ inputs, and size $s(C)$, with maximum fan-in $k$, we define the proposition
-\[ generates_k(C, D) \equiv \forall x \in \{0, 1\}^n, \rho(x) = Pr_{x' \sim U_{i(C)}}(C(x') = x). \]
+\[ \mathsf{generates}_k(C, D) \equiv \forall x \in \{0, 1\}^n, \rho(x) = Pr_{x' \sim U_{i(C)}}(C(x') = x). \]
 For any given $k$, we define the generator complexity of the distribution $D$,
-\[ G_k(D) = \min_{C : generates_k(C, D)} i(C) + s(C) \]
+\[ G_k(D) = \min_{C : \mathsf{generates}_k(C, D)} i(C) + s(C) \]
 \end{definition}
 
 \p One immediately sees the inputs and outputs of such a circuit $C$ as random variables, but the key insight for this paper is that the gates themselves can be seen as random variables. The reason we restricted the fan-in is because, doing so, we will see that the entire distribution over the input, gate, and output random variables can be thought of as the maximum entropy distribution which satisfies a number of marginal distribution constraints on $k$ or fewer variables. In section~\ref{sec:marginal}, we will refine this idea and generalize it to define what we call a $k$-localization.
@@ -194,7 +194,7 @@ To set up the gadget for the remainder part, we note that $code$ is not covering
 
 \section{Upper and Lower Bounds: Connections to the Circuit Model}\label{sec:bounds}
 
-\p In the introduction, we defined the concept of a circuit generating a distribution. We hinted that we could take the gates of our circuits and turn them into variables in our model, which we now know is $k$-localization. In definition~\ref{def:generates}, we defined the relation $generates_k$, parameterized on the maximum fan-in allowed in our circuit. The reason we did so is that we can prove the following.
+\p In the introduction, we defined the concept of a circuit generating a distribution. We hinted that we could take the gates of our circuits and turn them into variables in our model, which we now know is $k$-localization. In definition~\ref{def:generates}, we defined the relation $\mathsf{generates}_k$, parameterized on the maximum fan-in allowed in our circuit. The reason we did so is that we can prove the following.
 
 \begin{lemma}\label{lem:generator}
 If circuit $C$ has maximum fan-in $k-1$, $m$ bits of input, size $s$, and generates distribution $D$, we can use it to construct a $k$-localization of $D$ with $m + s$ hidden variables.
@@ -213,7 +213,7 @@ We prove by induction on the DAG structure that any configuration in the support
 
 \textit{Step 3 (marginal model).} The marginal of $D'$ on the $n$ output coordinates gives
 \[ \Pr_{D'}(X = x) = \frac{|\{x' \in \{0,1\}^m : C(x') = x\}|}{2^m} = \rho(x), \]
-by the definition of $generates_k$. Thus $D'$ is a $k$-localization of $D$ with $m + s$ hidden variables.
+by the definition of $\mathsf{generates}_k$. Thus $D'$ is a $k$-localization of $D$ with $m + s$ hidden variables.
 \end{proof}
 
 \begin{remark}\label{rem:hammersley-clifford}
@@ -224,7 +224,11 @@ The indicator function $\mathbf{1}_{S'}$ factors as a product of local functions
 \[ \LC_k(D) \leq G_{k-1}(D) \]
 \end{corollary}
 
-\p The above is a nice link between the work in \cite{vi10} and our work here, showing that our model is at least as expressive as the model introduced there. The construction shown above is generic, in the sense that this idea of using the marginals as local verification of circuit operation can be used to show that our model is upper bounded by a number of notions of circuit complexity, a few examples of which will now be proven.
+\p The above is a nice link between the work in \cite{vi10} and our work here, showing that our model is at least as expressive as the model introduced there.
+
+\p It is worth noting that Viola \cite{vi10} introduces several complexity measures beyond generator complexity, including \emph{distinguishing complexity} (how large a circuit is needed to distinguish $D$ from uniform) and \emph{sampling complexity} (the minimum circuit size needed to sample from $D$ given access to random bits). Viola proves relationships among these measures using communication complexity techniques---in particular, showing that distributions requiring large communication to generate also require large circuits to sample. An interesting question is whether these communication complexity techniques could yield lower bounds on $\LC_k$. The marginal constraints in a $k$-localization define a structured form of interaction between the observed and latent variables, and it is plausible that communication lower bounds (e.g., via information complexity) could translate into constraints on the number of latent variables needed. We leave this as a direction for future work.
+
+\p The construction shown above is generic, in the sense that this idea of using the marginals as local verification of circuit operation can be used to show that our model is upper bounded by a number of notions of circuit complexity, a few examples of which will now be proven.
 
 \begin{definition}\label{def:circuit-complexity}
 Define $C_k(S)$ as the size of the smallest circuit which recognizes the set $S$ with maximum fan-in $k$.
@@ -248,8 +252,8 @@ For flat $D$,
 \begin{definition}\label{def:witness-counting}
 We'll say that the nondeterministic circuit $C$ with maximum fan-in $k$, $m(C)$ nondeterministic bits, $n$ input bits, and size $s(C)$ is a witness counting model for $D$ if we have that
 \[ \forall x \in \{0, 1\}^n, \rho(x) = \frac{\sum_{h \in \{0, 1\}^m} C(x, h)}{\sum_{x' \in \{0, 1\}^n, h \in \{0, 1\}^m} C(x', h)},  \]
-and we define the proposition $witcount_k(C, D)$ to state that $C$ is a witness counting model for $D$. We define the witness counting complexity of $D$ as
-\[ W_k(D) = \min_{C : witcount_k(C, D)} m(C) + s(C). \]
+and we define the proposition $\mathsf{witcount}_k(C, D)$ to state that $C$ is a witness counting model for $D$. We define the witness counting complexity of $D$ as
+\[ W_k(D) = \min_{C : \mathsf{witcount}_k(C, D)} m(C) + s(C). \]
 \end{definition}
 
 \begin{lemma}\label{lem:witness-counting}
@@ -268,7 +272,15 @@ Let $D' = \mathrm{Uniform}(S')$, with marginals recorded as before. The DAG indu
 
 \p The key to what we've proven so far in this section has been the fact that computation can be locally verified. In fact, one of the seminal theorems in complexity theory, the Cook-Levin theorem \cite{co71} is based on a similar property of non-deterministic computation, its ability to guess and verify each step of the computation. This intuition might guide you to search for connections between nondeterministic circuit complexity and our notion, but it's not at all clear that the upper bound technique above will work. In particular, we can use our method to transform a nondeterministic circuit $C$ which recognizes $S$ into a $k$-localization for \textit{some} distribution $D$ with support $S$, but unless it has the properties of a witness counting model, it seems that this same trick will not work for us.
 
-\p The analogy with proof complexity is worth noting explicitly. In our constructions, the latent variables play the role of a ``proof'' or ``witness'' that $x \in S$, while the $k$-marginal constraints serve as ``local checks'' that verify this proof by inspecting at most $k$ variables at a time. This is structurally reminiscent of probabilistically checkable proofs (PCPs), where a verifier checks a proof by reading a bounded number of bits. The key difference is that our local checks are enforced via entropy maximization rather than probabilistic verification, but the underlying principle---that global correctness can be ensured by local consistency---is the same.
+\p The analogy with proof complexity is worth developing more carefully. In our constructions, the latent variables play the role of a ``proof'' or ``witness'' that $x \in S$, while the $k$-marginal constraints serve as ``local checks'' that verify this proof by inspecting at most $k$ variables at a time. We can make this correspondence precise:
+
+\begin{itemize}
+\item \textbf{Proof string.} Given a $k$-localization of $D$ with $l$ latent variables, an assignment $h \in \{0,1\}^l$ to the latent variables serves as a ``proof'' that the observed string $x$ belongs to the support $S$.
+\item \textbf{Local checks.} Each marginal constraint $\phi_i$ on variables $S_i$ with $|S_i| \leq k$ acts as a local check: it reads at most $k$ bits of the combined string $(x, h)$ and verifies that the observed pattern is consistent (i.e., lies in $\mathrm{supp}(\phi_i)$).
+\item \textbf{Global consistency.} In the PCP setting \cite{as98, almo98}, probabilistic verification ensures that a globally invalid proof is rejected with high probability. In our setting, entropy maximization plays an analogous role: the support intersection lemma (lemma~\ref{lem:support-intersection}) ensures that the \emph{only} configurations receiving positive probability are those passing \emph{all} local checks simultaneously.
+\end{itemize}
+
+\p This suggests viewing $\LC_k(D)$ through the lens of proof systems: the proof length is $l = \LC_k(D)$ (the number of latent variables), and the query complexity is $k$ (the locality of each check). Unlike PCPs, where the verifier is randomized and may err, our ``verifier'' is deterministic---it accepts exactly when all marginal constraints are satisfied---but it achieves global soundness through the maximum entropy principle rather than through random sampling of checks. It is an interesting open question whether techniques from algebraic proof systems or the sum-check protocol \cite{lfkn92} could be adapted to yield tighter bounds on $\LC_k$, particularly for structured distributions whose supports have algebraic descriptions.
 
 \p The insight here, however, has to do with the support intersection lemma (lemma~\ref{lem:support-intersection}), which tells us that the support of the maximum entropy distribution is exactly the intersection of the supports of its marginal constraints. This allows us to go from marginal constraints back to circuits.
 
@@ -291,6 +303,14 @@ A $k$-localization of $D$ with $l = \LC_k(D)$ extra variables is a $k$-local dis
 \end{proof}
 
 \p This lower bound is meaningful whenever $\mathrm{NSize}(S) \gg n^k$, and it tells us that exhibiting distributions with high $k$-localization complexity is at least as hard as proving nondeterministic circuit lower bounds. The gap between our upper bounds---which relate $\LC_k$ to deterministic circuit measures---and this lower bound via nondeterministic circuit complexity mirrors the central open question in circuit complexity of separating deterministic from nondeterministic computation. It is natural to ask whether these bounds are tight for explicit distributions. Closing the gap in either direction would have significant consequences: proving that $\LC_k(D)$ matches the lower bound for some explicit family would yield new nondeterministic circuit lower bounds, while proving that the upper bounds are tight would require new circuit constructions that may be of independent interest.
+
+\begin{remark}[On the gap between upper and lower bounds]\label{rem:gap}
+For flat distributions, the gap between our best upper bound $\LC_k(D) \leq C_{k-1}(S)$ and our lower bound $\LC_k(D) = \Omega_k(\mathrm{NSize}(S)^{1/k}) - n$ deserves closer examination. For a set $S$ with $\mathrm{NSize}(S) = t$ and $C_{k-1}(S) = s$, our bounds give roughly $t^{1/k} \lesssim \LC_k(D) \lesssim s$, which can be an enormous gap since $s$ may be exponentially larger than $t^{1/k}$.
+
+The $1/k$ exponent in the lower bound arises from our use of the crude bound $m \leq \binom{n+l}{k}$ on the number of marginal constraints. An optimal $k$-localization need not use all $\binom{n+l}{k}$ possible constraints---it may use far fewer---and so a structural argument that accounts for the actual constraint pattern could improve the exponent. In particular, if one could show that the constraint hypergraph of any $k$-localization achieving the minimum has some structural property (e.g., bounded overlap or expansion), this might yield a polynomial improvement in the lower bound.
+
+A natural question is whether $\LC_k$ is genuinely a new measure, or whether it is equivalent to circuit complexity up to polynomial factors. We conjecture that $\LC_k$ and $C_{k-1}$ are \emph{not} polynomially related in general: a $k$-localization can exploit the structure of marginal constraints more flexibly than a circuit, since the constraints need not form a DAG and the latent variables need not correspond to gate computations. In particular, a $k$-localization allows ``sharing'' of information between constraints in ways that a circuit's acyclic structure does not. Exhibiting an explicit family of flat distributions where $\LC_k(D) \ll C_{k-1}(S)$ would confirm this separation and demonstrate that the maximum entropy framework captures computational structure beyond what circuits alone can express.
+\end{remark}
 
 \section{On Computing $\LC_k$}\label{sec:computing}
 
@@ -327,7 +347,11 @@ By the Razborov--Rudich theorem, no natural proof against $\mathrm{P/poly}$ exis
 \end{proof}
 
 \begin{remark}\label{rem:k-equals-2}
-The case $k = 2$ is genuinely different. The usefulness step above requires that fan-in-$(k-1)$ circuits can simulate general computation, which fails for $k = 2$: fan-in-$1$ circuits compute only functions of a single variable. The computational complexity of $\LC_2$ therefore remains open.
+The case $k = 2$ is genuinely different and merits special attention. The usefulness step above requires that fan-in-$(k-1)$ circuits can simulate general computation, which fails for $k = 2$: fan-in-$1$ circuits compute only functions of a single variable. The natural proofs barrier therefore does not apply, leaving the computational complexity of $\LC_2$ wide open.
+
+The $2$-local distributions are precisely the pairwise Markov random fields, which include the Ising model as a special case---one of the most studied objects in statistical physics, combinatorics, and theoretical computer science. The computational complexity of pairwise models is rich: exact inference is $\#$P-hard in general, but the celebrated work of Jerrum and Sinclair \cite{js93} shows that approximate sampling from ferromagnetic Ising models is possible in polynomial time via Markov chain Monte Carlo. More broadly, dichotomy theorems for counting CSPs characterize which constraint languages admit efficient counting and which are $\#$P-hard.
+
+For $\LC_2$ specifically, the question is: given a distribution $D$ (as a truth table) and a threshold $l$, can we decide whether $\LC_2(D) \leq l$ in polynomial time? Note that the upper bound $\LC_2(D) \leq C_1(S)$ is uninformative, since fan-in-$1$ circuits can only compute functions of a single variable and thus $C_1(S)$ is enormous for most sets $S$. This means that the relationship between $\LC_2$ and circuit complexity is genuinely unclear: unlike for $k \geq 3$, we have no useful circuit-based upper bound, so $\LC_2$ may capture a fundamentally different aspect of distributional structure. Resolving whether $\LC_2$ is computable in polynomial time, NP-hard, or of intermediate complexity would shed light on the power of pairwise constraints as a model of computation.
 \end{remark}
 
 \p The difficulty of computing $\LC_k$ can also be understood through its relationship to circuit minimization problems. For flat distributions, our upper and lower bounds sandwich $\LC_k$ between $\Omega_k(\mathrm{NSize}(S)^{1/k}) - n$ and $C_{k-1}(S)$, so computing $\LC_k$ would yield nontrivial information about both deterministic and nondeterministic circuit complexity. This connects $\LC_k$ to the Minimum Circuit Size Problem (MCSP) \cite{kc00}, a central open problem in computational complexity: MCSP asks whether a given truth table can be computed by a circuit of size at most $s$, and its complexity status remains unresolved despite decades of study.
@@ -339,7 +363,7 @@ The case $k = 2$ is genuinely different. The usefulness step above requires that
 \p We close with several directions for further investigation.
 
 \begin{open}\label{open:explicit-lower}
-Can we exhibit explicit families of distributions $\{D_n\}$ for which $\LC_k(D_n)$ is super-polynomial in $n$ for some fixed $k$? By our lower bound, this would require distributions whose supports have super-polynomial nondeterministic circuit complexity. Conversely, proving strong upper bounds on $\LC_k$ for all distributions would yield new circuit upper bounds.
+Can we exhibit explicit families of distributions $\{D_n\}$ for which $\LC_k(D_n)$ is super-polynomial in $n$ for some fixed $k$? By our lower bound, this would require distributions whose supports have super-polynomial nondeterministic circuit complexity---itself a major open problem in circuit complexity, as no explicit super-polynomial lower bounds on $\mathrm{NSize}$ are known for functions in NP. This problem is therefore at least as hard as proving nondeterministic circuit lower bounds. However, the maximum entropy perspective may suggest new attack strategies: rather than directly constructing hard functions, one might identify distributions whose entropy-maximizing structure inherently resists efficient localization. Conversely, proving strong upper bounds on $\LC_k$ for all distributions would yield new circuit upper bounds.
 \end{open}
 
 \begin{open}\label{open:hierarchy}
@@ -348,6 +372,8 @@ For what distributions does the hierarchy $\LC_2(D) \geq \LC_3(D) \geq \cdots \g
 
 \begin{open}\label{open:graphical}
 The $k$-local distributions in this paper are closely related to Markov random fields with cliques of size at most $k$, where the distribution takes the Gibbs form $\rho(x) \propto \exp(\sum_i \lambda_i f_i(x_{S_i}))$ as shown in \cite{ja57}. The precise structural relationship between $k$-localization complexity and the treewidth or other structural parameters of graphical models \cite{wj08, la96} remains to be explored.
+
+Given a $k$-localization with marginal constraints $\{\phi_i\}_{i \in [m]}$, the \emph{constraint hypergraph} has vertex set $\{X_1, \ldots, X_n, H_1, \ldots, H_l\}$ and a hyperedge $S_i$ for each constraint $\phi_i$. Since each $|S_i| \leq k$, the primal graph (connecting any two variables appearing in a common constraint) has cliques of size at most $k$. The \emph{treewidth} of this primal graph \cite{rs86, bo93} is a natural parameter: when treewidth is bounded, inference in graphical models (including maximum entropy computation) can be performed efficiently via junction tree algorithms \cite{la96}. It is therefore plausible that for distributions $D$ whose optimal $k$-localization has a constraint graph of bounded treewidth, $\LC_k(D)$ can be computed in polynomial time---complementing our hardness result for the general case. Conversely, treewidth lower bounds for the constraint graph might yield improved lower bounds on $\LC_k$, since treewidth controls the complexity of inference and verification in graphical models.
 \end{open}
 
 \begin{open}\label{open:computational}

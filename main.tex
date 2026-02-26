@@ -1,0 +1,360 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{biblatex}
+
+\addbibresource{bibliography.bib}
+
+\newcommand{\p}{\paragraph*{}}
+\newcommand{\LC}{\mathcal{L}}
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{example}{Example}
+\newtheorem{corollary}{Corollary}
+\newtheorem{open}{Open Problem}
+\newtheorem{remark}{Remark}
+
+\title{Localization Complexity: Connecting Maximum Entropy Models and Circuit Complexity}
+\author{Samuel Schlesinger, Joshua Grochow}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We introduce the $k$-localization complexity $\LC_k(D)$ of a probability distribution $D$, defined as the minimum number of latent variables needed to represent $D$ as the marginal of a $k$-local distribution---one whose probability mass function is the maximum entropy distribution consistent with marginal constraints on at most $k$ variables. Drawing on the Hammersley--Clifford factorization theorem and the theory of exponential families, we connect this measure to several notions of circuit complexity via a technique we call \emph{local verification}: because each gate in a bounded fan-in circuit depends on few inputs, its correct operation can be enforced by a single marginal constraint. This yields upper bounds $\LC_k(D) \leq G_{k-1}(D)$ (generator complexity), $\LC_k(D) \leq C_{k-1}(S)$ (circuit complexity, for flat $D$), and $\LC_k(D) \leq W_{k-1}(D)$ (witness counting complexity). Conversely, we prove a lower bound $\LC_k(D) = \Omega_k(\mathrm{NSize}(S)^{1/k}) - n$, where $\mathrm{NSize}(S)$ is the nondeterministic circuit complexity of the support. We use these bounds to show, via the Razborov--Rudich natural proofs barrier, that computing $\LC_k$ from a truth table is conditionally hard for $k \geq 3$. Together, these results position $k$-localization as a natural bridge between maximum entropy models and computational complexity theory.
+\end{abstract}
+
+\section{Introduction}\label{sec:intro}
+\p In complexity theory, we typically discuss the ability of various ``models of computation'' to describe sets of binary strings. Given a model $M$, we say that the $M$-complexity of a given set $S$ is how efficiently, in some parameters (circuit size, computation time/space), our model $M$ can describe our set $S$. We can extend this notion to real values \cite{we95}, search problems \cite{go92}, and, more recently, probability distributions \cite{vi10}. In this paper, we further the study of the complexity of probability distributions by introducing a new model for them, the $k$-localization. Our contributions include the definition of this model and results on the relationships between it and a number of other models of computation. Denoting the $k$-localization complexity of a distribution $D$ as $\LC_k(D)$, we show that
+
+\begin{enumerate}
+    \item When we restrict our circuits to have maximum fan-in $k-1$, a flat distribution $D$ on a set $S$ has $\LC_k(D)$ bounded above by the circuit complexity of $S$.
+    \item A distribution $D$ with support $S$ has $\LC_k(D)$ bounded below by roughly the $k$th root of the nondeterministic circuit complexity of $S$, minus $n$.
+    \item If we can generate our distribution $D$ in the style of \cite{vi10} with a circuit of size $s$, $m$ inputs, and maximum fan-in $k-1$, then $\LC_k(D) \leq s + m$.
+\end{enumerate}
+
+\p We note a structural analogy between $k$-localization and tensor network decompositions such as matrix product states (MPS) and projected entangled pair states (PEPS). In both frameworks, a high-dimensional object (a distribution or a tensor) is represented via local interactions mediated by auxiliary variables: in $k$-localization, latent variables enforce local marginal constraints, while in tensor networks, bond indices connect local tensors. The bond dimension in tensor networks plays a role analogous to the number of latent variables, and locality constraints in both settings control the expressiveness of the representation.
+
+\p We prove a number of other results about our model and the associated complexity measure which will make sense in the language of the paper, but we will begin by trying to motivate our model by thinking about the model in \cite{vi10} in a slightly different way.
+
+\section{Preliminaries}\label{sec:prelim}
+
+\p \textbf{Distributions.} Throughout, $D$ denotes a joint distribution over binary random variables $X_1, X_2, \ldots, X_n$. It induces a probability mass function $\rho : \{0,1\}^n \rightarrow [0, 1]$ with
+\[ \rho(x) = \Pr_D(X_1 = x_1 \wedge X_2 = x_2 \wedge \cdots \wedge X_n = x_n), \]
+and a support $S = \{ x \in \{0, 1\}^n \mid \rho(x) > 0 \}$.
+
+\p \textbf{Circuits.} A Boolean circuit $C$ over $n$ inputs is a directed acyclic graph whose internal nodes (gates) compute Boolean functions of their inputs. The \emph{size} of $C$ is its number of gates, and the \emph{fan-in} of a gate is its number of inputs. We say $C$ \emph{recognizes} a set $S \subseteq \{0,1\}^n$ if $C(x) = 1 \Leftrightarrow x \in S$. Any circuit of size $s$ and arbitrary fan-in can be converted to a fan-in-$2$ circuit of size $O(s^2)$, and conversely, so circuit size is polynomially robust across fan-in choices.
+
+\p \textbf{Nondeterministic circuits.} A nondeterministic Boolean circuit has $n$ input bits and $l$ additional nondeterministic input bits. It recognizes $S$ if $x \in S \Leftrightarrow \exists h \in \{0,1\}^l, C(x,h) = 1$. We define the nondeterministic circuit complexity
+\[ \mathrm{NSize}(S) = \min_C \big(l(C) + s(C)\big), \]
+where the minimum is over all nondeterministic circuits $C$ recognizing $S$, with $l(C)$ nondeterministic bits and $s(C)$ gates.
+
+\p \textbf{Entropy.} We define the Shannon entropy \cite{sh48} of a distribution $D$ as
+\[ H(D) = -\sum_{x \in \{0, 1\}^n} \rho(x) \ln \rho(x). \]
+
+\p \textbf{Flat distributions.} A distribution $D$ is \emph{flat} (or uniform) on its support if $\rho(x) = 1/|S|$ for all $x \in S$.
+
+\p \textbf{Maximum entropy and exponential families.} The maximum entropy distribution consistent with a set of marginal constraints $\{\phi_i : \{0,1\}^{S_i} \rightarrow [0,1]\}_{i \in [m]}$ takes the Gibbs form
+\[ \rho(x) \propto \exp\!\Big(\sum_i \lambda_i f_i(x_{S_i})\Big), \]
+where the $\lambda_i$ are Lagrange multipliers and the $f_i$ are sufficient statistics determined by the constraints \cite{ja57, wj08}. This is the principle underlying exponential family models in statistics and statistical physics.
+
+\p \textbf{Hammersley--Clifford theorem.} A positive distribution $D$ is Markov with respect to a graph $G$ if and only if it factorizes over the cliques of $G$ \cite{hc71, wj08}. In our setting, $k$-local distributions correspond precisely to Markov random fields whose cliques have size at most $k$.
+
+\p We will also need the following lemma about the support of maximum entropy distributions, which plays a central role in our constructions.
+
+\p If $D$ is the maximum entropy distribution over a set of marginal constraints $\{\phi_i\}$, we can extend the support of each marginal to a subset of $\{0, 1\}^n$:
+\[ \mathrm{supp}(\phi_i) = \{x \in \{0, 1\}^n \mid \phi_i(x_{S_i}) > 0 \}. \]
+
+\begin{lemma}\label{lem:support-intersection}
+If $D$ is the maximum entropy distribution over a set of consistent marginal constraints $\{\phi_i : \{0,1\}^{S_i} \rightarrow [0, 1] \}_{i \in [m]}$,
+\[ S = \bigcap_{i \in [m]} \mathrm{supp}(\phi_i). \]
+\end{lemma}
+
+\begin{proof}
+Let $T = \bigcap_{i \in [m]} \mathrm{supp}(\phi_i)$.
+
+\textit{$S \subseteq T$:} If $\rho(x) > 0$, then for every $i$ the $S_i$-marginal of $D$ must assign positive probability to $x_{S_i}$, so $\phi_i(x_{S_i}) > 0$ and $x \in \mathrm{supp}(\phi_i)$. Thus $x \in T$.
+
+\textit{$T \subseteq S$:} By the maximum entropy theorem \cite{wj08}, the optimizer takes the Gibbs form $\rho(x) = \exp\!\big(\lambda_0 + \sum_i \lambda_{i, x_{S_i}}\big)$ wherever it is positive, and is zero precisely on the complement of $T$. More precisely, consider the maximum entropy problem restricted to distributions supported on $T$. For every $x \in T$ and every $i$, we have $\phi_i(x_{S_i}) > 0$, so no marginal constraint forces $\rho(x) = 0$. The Gibbs form yields $\rho(x) > 0$ for all $x \in T$ (since the exponential is always positive). Therefore $T \subseteq S$.
+\end{proof}
+
+\p The model of \cite{vi10} describes a distribution $D$ via a circuit $C$ with $n$ outputs and $m$ inputs, with the property that if we input $m$-bit strings, uniformly sampled from $\{0, 1\}^m$, the output bit-string is $x$ with the same probability that $x$ is sampled from $D$. Here, we will define a variant of this model and an associated complexity measure:
+
+\begin{definition}\label{def:generates}
+Given a circuit $C$ with $n$ outputs, $i(C)$ inputs, and size $s(C)$, with maximum fan-in $k$, we define the proposition
+\[ generates_k(C, D) \equiv \forall x \in \{0, 1\}^n, \rho(x) = Pr_{x' \sim U_{i(C)}}(C(x') = x). \]
+For any given $k$, we define the generator complexity of the distribution $D$,
+\[ G_k(D) = \min_{C : generates_k(C, D)} i(C) + s(C) \]
+\end{definition}
+
+\p One immediately sees the inputs and outputs of such a circuit $C$ as random variables, but the key insight for this paper is that the gates themselves can be seen as random variables. The reason we restricted the fan-in is because, doing so, we will see that the entire distribution over the input, gate, and output random variables can be thought of as the maximum entropy distribution which satisfies a number of marginal distribution constraints on $k$ or fewer variables. In section~\ref{sec:marginal}, we will refine this idea and generalize it to define what we call a $k$-localization.
+
+\section{Marginal Models, Locality, and Localization}\label{sec:marginal}
+
+\p We begin by defining the concept of a marginal model of a distribution $D$.
+
+\begin{definition}\label{def:marginal-model}
+Given a distribution $D'$ over random variables $X_1, ..., X_n, H_1, ..., H_m$, we say that $D'$ is a marginal model of $D$ if the marginal distribution over the $X_i$ in $D'$ is equivalent to the distribution of the $X_i$ in $D$. In particular, we say that $D'$ is a marginal model of $D$ if
+\[ \forall x \in \{0, 1\}^n, \sum_{h \in \{0, 1\}^m} Pr_{D'}(X_1...X_nH_1...H_m = xh) = \rho(x). \]
+We refer to the $H_i$ as hidden or latent variables in order to align with the literature on probabilistic graphical models.
+\end{definition}
+
+\p To make things clear, we will give an example of a particular type of marginal model which exists for rational distributions.
+
+\begin{example}\label{ex:rational}
+Given a rational distribution $D$ such that
+\[ \exists d \in \mathbb{N}, \forall x \in \{0, 1\}^n, \exists c_x \in \mathbb{N}, \rho(x) = \frac{c_x}{d}, \]
+we can make a marginal model, $D'$, for $D$ in the following way. We include $m = \lceil \log_2(\max_{x \in \{0, 1\}^n} c_x) \rceil$ extra variables $H_1, ... H_m$, and make $D'$ the uniform distribution over the set
+\[ \{x \langle i \rangle \mid x \in \{0,1\}^n, i \in \{1, ..., c_x\}\}, \]
+where $\langle i \rangle$ is the $m$ bit representation of $i$. The size of this set is $d$, so by construction we have that
+\[ Pr(X_1...X_n = x) = \sum_{i \in \{1, ..., c_x\}} \frac{1}{d} = \frac{c_x}{d}. \]
+One can see that any uniform marginal model for $D$ must have at least $m$ extra variables.
+\end{example}
+
+\p In this paper, however, we are not interested in general marginal models, and really they aren't that interesting unless you constrain the properties of the model distribution $D'$, else $D' = D$ always does the trick. We will constrain our marginal models to be entropy maximizing distributions subject to certain local kinds of constraints. Recall from section~\ref{sec:prelim} that the Shannon entropy of $D$ is $H(D) = -\sum_x \rho(x) \ln \rho(x)$. We now define the concept of a $k$-local distribution as a maximizer of entropy under local constraints.
+
+\begin{definition}\label{def:k-local}
+We say that $D$ is $k$-local if it is the highest entropy distribution which has its own marginals on at most $k$ variables. Equivalently, $D$ is $k$-local if there exists a collection of marginal probability functions $\phi_i : \{0, 1\}^{S_i} \rightarrow [0, 1]$ where $|S_i| \leq k$ such that $D$ is the maximizer of entropy among distributions which have the property that
+\[ \forall i, \forall x_{S_i} \in \{0, 1\}^{S_i}, \quad \phi_i(x_{S_i}) = \sum_{x_{[n]\setminus S_i} \in \{0, 1\}^{[n]\setminus S_i}} \rho(x). \]
+\end{definition}
+
+\begin{example}\label{ex:2-local}
+To show an example of a $2$-local distribution $D$ on $3$ variables, we use the following $3$ marginal constraints
+\[ Pr_D(X_1X_2 = ab) = \begin{cases} 0 & \text{if } b = 1, \\ 1/2 & \text{if } b = 0, \end{cases} \]
+\[ \forall a, b \in \{0, 1\},\quad Pr_D(X_1X_3 = ab) = \frac{1}{4}, \]
+\[ Pr_D(X_2X_3 = ab) = \begin{cases} 0 & \text{if } a = 1, \\ 1/2 & \text{if } a = 0. \end{cases} \]
+Notice that the only configurations which are banned by these marginals are ones in which $X_2 = 1$. That the uniform distribution on the set $\{000, 100, 001, 101\}$ satisfies these marginals implies that this must be the maximum entropy distribution, as uniform distributions maximize entropy on a given support. Thus, we've shown that the uniform distribution over the set $\{000, 100, 001, 101\}$ is a $2$-local distribution. Here, we've illustrated a way in which these constraints interact with the support of $D$: in not including a single string in a support of a $k$-marginal, you simultaneously ban $2^{n-k}$ strings from the support of $D$, reminding one of the effect $k$-clauses have in formulas in conjunctive normal form. This connection will be useful for us in section~\ref{sec:bounds}, where we will discuss the connections between our model and the circuit model.
+\end{example}
+
+\p Now that we have defined the property we would like the marginal models we're interested to have, we can define the model which will be the focus of this paper.
+
+\begin{definition}\label{def:k-localization}
+For a distribution $D$, a marginal model $D'$ of $D$ is said to be a $k$-localization of $D$ if $D'$ is $k$-local. For $k \geq 2$, we define $\LC_k(D)$ to be the minimum number of extra variables one must add to construct a $k$-localization of $D$.
+\end{definition}
+
+\p We give as an example the canonical $2$-localization for any distribution $D$.
+
+\begin{example}\label{ex:canonical-2-loc}
+We can construct a $2$-localization $D'$ for $D$ by introducing a latent variable $H_x$ for every $x \in S$. For every such variable $H_x$, we introduce $n$ $2$-marginals to constrain $D'$, one for each $i \in [n]$:
+\[ Pr_{D'}(H_x X_i = 1 x_i) = \rho(x), \]
+\[ Pr_{D'}(H_x X_i = 1 \bar{x_i}) = 0, \textit{ and} \]
+\[ \forall b \in \{0, 1\}, Pr_{D'}(H_x X_i = 0 b) = Pr_D(X_i = b \wedge X_1...X_n \neq x). \]
+We note that whenever $H_x = 1$, if $x' \neq x$, $H_{x'} \neq 1$, as this forces $X_1...X_n = x \neq x'$. As $\sum_{x \in \{0, 1\}^n : \rho(x) > 0} Pr_{D'}(H_x = 1) = \sum_{x \in \{0, 1\}^n} \rho(x) = 1$, we know that one of our $H_x$ must always be on. From this, it is clear that the marginal of $D'$ on $X_1, ..., X_n$ is equivalent to the original distribution $D$. We have shown that
+\[ \LC_2(D) \leq |S|. \]
+\end{example}
+
+\p The above can be seen as an example of the canonical $k$-localization for a given distribution $D$, which we will see soon. The reason that we forbid $k=1$ in the definition of $\LC_k(D)$ is because there is no canonical $1$-localization for any distribution which doesn't consist of independent binary variables, making the hypothetical $\LC_1(D)$ undefined for the great majority of distributions $D$.
+
+\p There are a number of elementary lemmas about $\LC_k(D)$ which follow directly from the definitions.
+
+\begin{lemma}\label{lem:n-local} $\LC_n(D) = 0 $
+\end{lemma}
+
+\begin{proof}
+$D$ itself is $n$-local: the single $n$-variable marginal is the full joint distribution, and $D$ is the maximum entropy distribution consistent with its own joint.
+\end{proof}
+
+\begin{lemma}\label{lem:monotone} $k_1 \geq k_2 \Rightarrow \LC_{k_1}(D) \leq \LC_{k_2}(D)$
+\end{lemma}
+
+\begin{proof}
+Any $k_2$-localization is also a $k_1$-localization, since every marginal constraint on at most $k_2$ variables is also a constraint on at most $k_1$ variables.
+\end{proof}
+
+\begin{lemma}\label{lem:zero-iff-local}
+$\LC_k(D) = 0 \Longleftrightarrow$ $D$ is $k$-local.
+\end{lemma}
+
+\begin{proof}
+If $\LC_k(D) = 0$, then $D$ itself (with zero extra variables) is a $k$-localization, so $D$ is $k$-local. Conversely, if $D$ is $k$-local, then $D$ is a $k$-localization of itself with $0$ extra variables, so $\LC_k(D) = 0$.
+\end{proof}
+
+\p The first non-trivial lemma, an extension of example~\ref{ex:canonical-2-loc}, is a construction of a $k$-localization for arbitrary distributions $D$, giving us an upper bound for $\LC_k(D)$.
+
+\begin{lemma}\label{lem:upper-bound}
+$\LC_k(D) \leq (k-1)\lceil \frac{|S|}{2^{k-1} - 1} \rceil$
+\end{lemma}
+
+\begin{proof}
+The idea in example~\ref{ex:canonical-2-loc} was to construct $|S|$ gadgets $H_x$ for each $x \in S$ such that
+\[ H_x = 1 \Rightarrow X_1...X_n = x. \]
+The reason that this was possible was that we could allow the $H_x = 0$ to force that some other gadget must be active, as they were mutually exclusive and their probabilities summed to one. To generalize this for $k$-localizations, we use $\lceil \frac{|S|}{2^{k-1} - 1} \rceil$ gadgets, each consisting of $k - 1$ variables, where the all zeroes configuration plays the role that the single zero in our smaller gadgets did. We partition our set $S$ into sets of size $2^{k-1} - 1$ with some smaller remainder set if $2^{k-1} - 1$ does not divide $|S|$ perfectly. Each gadget, then, handles one of the parts, encoding each string with $k-1$ bits, excluding the $0^{k-1}$ vector from the encoding. Denoting the encoding of a particular string in our support as $code(x)$, we describe the gadget for a particular part, $A$. We introduce variables $H_1, ..., H_{k-1}$, and constrain the marginals of our $k$-localization $D'$ by
+\[ \forall x \in A, i \in [n], Pr_{D'}(H_1...H_{k-1}X_i = code(x)x_i) = Pr_D(X_1...X_n = x), \]
+\[ \forall x \in A, i \in [n], Pr_{D'}(H_1...H_{k-1}X_i = code(x)\bar{x_i}) = 0, \]
+\[ Pr_{D'}(H_1...H_{k-1}X_i = 0^{k-1}1) = Pr_D(X_i = 1 \wedge X_1...X_n \notin A), \]
+\[ Pr_{D'}(H_1...H_{k-1}X_i = 0^{k-1}0) = Pr_D(X_i = 0 \wedge X_1...X_n \notin A). \]
+To set up the gadget for the remainder part, we note that $code$ is not covering all strings but $0^{k-1}$ as it is in our case, so we simply need to add that all these unused codes have probability $0$ of showing up at all. Any distribution which satisfies these constraints is a $k$-localization of $D$, as each non-zero configuration of a gadget again is mutually exclusive with others and they cumulatively sum to $1$ while forcing the $X_i$ to be in the configuration they encode.
+\end{proof}
+
+\p The next section will connect our $k$-localization model to various types of circuit models, following the intuition we sketched out in the introduction, where circuit gates correspond to latent variables.
+
+\section{Upper and Lower Bounds: Connections to the Circuit Model}\label{sec:bounds}
+
+\p In the introduction, we defined the concept of a circuit generating a distribution. We hinted that we could take the gates of our circuits and turn them into variables in our model, which we now know is $k$-localization. In definition~\ref{def:generates}, we defined the relation $generates_k$, parameterized on the maximum fan-in allowed in our circuit. The reason we did so is that we can prove the following.
+
+\begin{lemma}\label{lem:generator}
+If circuit $C$ has maximum fan-in $k-1$, $m$ bits of input, size $s$, and generates distribution $D$, we can use it to construct a $k$-localization of $D$ with $m + s$ hidden variables.
+\end{lemma}
+
+\begin{proof}
+We proceed in three steps.
+
+\textit{Step 1 (support constraint).} Let $g : \{0, 1\}^m \rightarrow \{0, 1\}^{s + n}$ be the function mapping each input $x'$ to the complete configuration of all gates in $C$ (including the $n$ output gates). Define
+\[ S' = \{ x' g(x') \mid x' \in \{0, 1\}^m \} \subseteq \{0,1\}^{m + s + n}, \]
+and let $D' = \mathrm{Uniform}(S')$. For each gate $j$ in $C$ with inputs at positions $i_1, \ldots, i_r$ (where $r \leq k-1$), record the marginal of $D'$ on the variables $(V_{i_1}, \ldots, V_{i_r}, G_j)$, where $V_i$ and $G_j$ denote the random variables corresponding to the $i$-th input bit and the $j$-th gate value in $D'$, respectively. We claim these marginals force the support to equal $S'$.
+
+We prove by induction on the DAG structure that any configuration in the support must satisfy $G_j = g_j(x')$ for all gates $j$. Consider a gate $j$ computing Boolean function $b_j$ of its inputs $V_{i_1}, \ldots, V_{i_r}$. Suppose a configuration has the inputs $V_{i_1}, \ldots, V_{i_r}$ agreeing with some valid trace $x'g(x')$ but $G_j \neq b_j(V_{i_1}, \ldots, V_{i_r})$. Then the marginal on $(V_{i_1}, \ldots, V_{i_r}, G_j)$ would assign positive probability to a tuple that has probability zero in $D'$ (since every element of $S'$ has $G_j = b_j(V_{i_1}, \ldots, V_{i_r})$), contradicting the marginal constraint. If an input $V_{i_l}$ disagrees with the valid trace, we recurse down the DAG to the gate producing $V_{i_l}$. The recursion terminates at primary inputs, where no disagreement is possible (the primary input variables are unconstrained and appear directly as coordinates of $S'$). Therefore the support of any distribution consistent with these marginals is exactly $S'$.
+
+\textit{Step 2 ($k$-locality).} By the support intersection lemma (lemma~\ref{lem:support-intersection}), the maximum entropy distribution consistent with the marginals recorded above has support exactly $S'$. Among all distributions with support $S'$, the uniform distribution has maximum entropy. Since $D'$ is uniform on $S'$ and matches its own marginals, $D'$ is $k$-local (each marginal constraint involves at most $k$ variables: $r \leq k-1$ inputs plus one gate output).
+
+\textit{Step 3 (marginal model).} The marginal of $D'$ on the $n$ output coordinates gives
+\[ \Pr_{D'}(X = x) = \frac{|\{x' \in \{0,1\}^m : C(x') = x\}|}{2^m} = \rho(x), \]
+by the definition of $generates_k$. Thus $D'$ is a $k$-localization of $D$ with $m + s$ hidden variables.
+\end{proof}
+
+\begin{remark}\label{rem:hammersley-clifford}
+The indicator function $\mathbf{1}_{S'}$ factors as a product of local functions, one per gate: $\mathbf{1}_{S'}(v) = \prod_j \mathbf{1}[G_j = b_j(V_{i_1}, \ldots, V_{i_r})]$, where each factor depends on at most $k$ variables. This is an instance of the Hammersley--Clifford factorization theorem \cite{hc71, wj08}: the distribution $D' = \mathrm{Uniform}(S')$ is Markov with respect to the graph whose cliques correspond to the gate-input sets, and it factorizes accordingly.
+\end{remark}
+
+\begin{corollary}\label{cor:generator}
+\[ \LC_k(D) \leq G_{k-1}(D) \]
+\end{corollary}
+
+\p The above is a nice link between the work in \cite{vi10} and our work here, showing that our model is at least as expressive as the model introduced there. The construction shown above is generic, in the sense that this idea of using the marginals as local verification of circuit operation can be used to show that our model is upper bounded by a number of notions of circuit complexity, a few examples of which will now be proven.
+
+\begin{definition}\label{def:circuit-complexity}
+Define $C_k(S)$ as the size of the smallest circuit which recognizes the set $S$ with maximum fan-in $k$.
+\end{definition}
+
+\begin{lemma}\label{lem:flat-circuit}
+If $D$ is flat on its support $S$, we can use a circuit $C$ of max fan-in $k-1$ and size $s$ recognizing $S$ to construct a $k$-localization of $D$ with $s$ hidden variables.
+\end{lemma}
+
+\begin{proof}
+The construction follows lemma~\ref{lem:generator}. Define $g : \{0, 1\}^n \rightarrow \{0, 1\}^s$, mapping each input $x$ to the complete gate configuration of $C$ on input $x$, and let
+\[ S' = \{ x g(x) \mid x \in S \}. \]
+Let $D' = \mathrm{Uniform}(S')$, with marginals recorded as in the proof of lemma~\ref{lem:generator} (one per gate, involving the gate and its at most $k-1$ inputs). The same DAG induction shows that any configuration in the support of a consistent distribution must satisfy $G_j = b_j(V_{i_1}, \ldots, V_{i_r})$ for every gate $j$. It remains to verify that no $x \notin S$ with $xg(x)$ appears in the support. If $x \notin S$, then $C(x) = 0$, so the output gate of $C$ takes value $0$ in $g(x)$. But every element of $S'$ has output gate equal to $1$ (since $C(x) = 1$ for all $x \in S$), so the marginal involving the output gate assigns probability zero to output $= 0$. This contradicts $xg(x)$ being in the support. By lemma~\ref{lem:support-intersection}, the support is exactly $S'$. Since $D$ is flat on $S$, the marginal of $D'$ on the first $n$ coordinates is $\mathrm{Uniform}(S) = D$.
+\end{proof}
+
+\begin{corollary}\label{cor:flat-circuit}
+For flat $D$,
+\[ \LC_k(D) \leq C_{k-1}(S) \]
+\end{corollary}
+
+\begin{definition}\label{def:witness-counting}
+We'll say that the nondeterministic circuit $C$ with maximum fan-in $k$, $m(C)$ nondeterministic bits, $n$ input bits, and size $s(C)$ is a witness counting model for $D$ if we have that
+\[ \forall x \in \{0, 1\}^n, \rho(x) = \frac{\sum_{h \in \{0, 1\}^m} C(x, h)}{\sum_{x' \in \{0, 1\}^n, h \in \{0, 1\}^m} C(x', h)},  \]
+and we define the proposition $witcount_k(C, D)$ to state that $C$ is a witness counting model for $D$. We define the witness counting complexity of $D$ as
+\[ W_k(D) = \min_{C : witcount_k(C, D)} m(C) + s(C). \]
+\end{definition}
+
+\begin{lemma}\label{lem:witness-counting}
+If $D$ has a witness counting model $C$ with maximum fan-in $k-1$, $m$ nondeterministic bits, and size $s$, we can build a $k$-localization for $D$ with $m + s$ latent variables.
+\end{lemma}
+
+\begin{proof}
+Define $g : \{0, 1\}^n \times \{0, 1\}^m \rightarrow \{0, 1\}^s$, mapping each pair $(x, h)$ to the gate configuration of $C$ on input $(x, h)$, and let
+\[ S' = \{ xhg(x, h) \mid x \in \{0, 1\}^n, h \in \{0, 1\}^m, C(x, h) = 1\}. \]
+Let $D' = \mathrm{Uniform}(S')$, with marginals recorded as before. The DAG induction from lemma~\ref{lem:generator} ensures that any configuration in the support satisfies all gate consistency constraints. As in lemma~\ref{lem:flat-circuit}, the output gate exclusion argument applies: every element of $S'$ has output gate equal to $1$, so configurations with $C(x, h) = 0$ are excluded from the support. By lemma~\ref{lem:support-intersection}, the support of the maximum entropy distribution is exactly $S'$, so $D'$ is $k$-local. The marginal on the first $n$ coordinates gives $\Pr_{D'}(X = x) = |\{h : C(x, h) = 1\}| / |S'|$, which equals $\rho(x)$ by the definition of a witness counting model.
+\end{proof}
+
+\begin{corollary}\label{cor:witness-counting}
+\[ \LC_k(D) \leq W_{k-1}(D) \]
+\end{corollary}
+
+\p The key to what we've proven so far in this section has been the fact that computation can be locally verified. In fact, one of the seminal theorems in complexity theory, the Cook-Levin theorem \cite{co71} is based on a similar property of non-deterministic computation, its ability to guess and verify each step of the computation. This intuition might guide you to search for connections between nondeterministic circuit complexity and our notion, but it's not at all clear that the upper bound technique above will work. In particular, we can use our method to transform a nondeterministic circuit $C$ which recognizes $S$ into a $k$-localization for \textit{some} distribution $D$ with support $S$, but unless it has the properties of a witness counting model, it seems that this same trick will not work for us.
+
+\p The analogy with proof complexity is worth noting explicitly. In our constructions, the latent variables play the role of a ``proof'' or ``witness'' that $x \in S$, while the $k$-marginal constraints serve as ``local checks'' that verify this proof by inspecting at most $k$ variables at a time. This is structurally reminiscent of probabilistically checkable proofs (PCPs), where a verifier checks a proof by reading a bounded number of bits. The key difference is that our local checks are enforced via entropy maximization rather than probabilistic verification, but the underlying principle---that global correctness can be ensured by local consistency---is the same.
+
+\p The insight here, however, has to do with the support intersection lemma (lemma~\ref{lem:support-intersection}), which tells us that the support of the maximum entropy distribution is exactly the intersection of the supports of its marginal constraints. This allows us to go from marginal constraints back to circuits.
+
+\begin{lemma}\label{lem:loc-to-circuit}
+Given a $k$-localization of a distribution $D$ with $m$ marginal constraints and $l$ extra variables, we can construct a nondeterministic circuit recognizing $S$ (the support of $D$) with $l$ nondeterministic variables and $m2^k/k + 1$ gates.
+\end{lemma}
+
+\begin{proof}
+By lemma~\ref{lem:support-intersection}, the support of the $k$-localization equals $\bigcap_i \mathrm{supp}(\phi_i)$. The top of the circuit can simply be an AND gate which gives us our $+ 1$ term. Aside from that, we can brute-force recognize the subsets $\mathrm{supp}(\phi_i)$, each of which is a Boolean function on $k$ bits. A naive sum-of-products implementation has size $O(k2^k)$, giving $O(mk2^k)$ gates overall. Applying the Lupanov bound \cite{lu58}, any Boolean function on $k$ bits can be computed by a circuit of size $O(2^k/k)$, improving the total to roughly $m2^k/k + 1$ gates.
+\end{proof}
+
+\begin{corollary}\label{cor:lower-bound}
+For any distribution $D$ with support $S$,
+\[ \mathrm{NSize}(S) \leq \LC_k(D) + \binom{n + \LC_k(D)}{k} \cdot \frac{2^k}{k} + 1. \]
+In particular, $\LC_k(D) = \Omega_k(\mathrm{NSize}(S)^{1/k}) - n$.
+\end{corollary}
+
+\begin{proof}
+A $k$-localization of $D$ with $l = \LC_k(D)$ extra variables is a $k$-local distribution over $n + l$ variables. Such a distribution has at most $\binom{n+l}{k}$ marginal constraints, each involving at most $k$ variables. Applying lemma~\ref{lem:loc-to-circuit} yields a nondeterministic circuit with $l$ nondeterministic bits and at most $\binom{n+l}{k} \cdot 2^k/k + 1$ gates. Since $\binom{n+l}{k} \leq (n+l)^k/k!$, the total complexity is $O_k((n+l)^k)$, and therefore $n + l = \Omega_k(\mathrm{NSize}(S)^{1/k})$.
+\end{proof}
+
+\p This lower bound is meaningful whenever $\mathrm{NSize}(S) \gg n^k$, and it tells us that exhibiting distributions with high $k$-localization complexity is at least as hard as proving nondeterministic circuit lower bounds. The gap between our upper bounds---which relate $\LC_k$ to deterministic circuit measures---and this lower bound via nondeterministic circuit complexity mirrors the central open question in circuit complexity of separating deterministic from nondeterministic computation. It is natural to ask whether these bounds are tight for explicit distributions. Closing the gap in either direction would have significant consequences: proving that $\LC_k(D)$ matches the lower bound for some explicit family would yield new nondeterministic circuit lower bounds, while proving that the upper bounds are tight would require new circuit constructions that may be of independent interest.
+
+\section{On Computing $\LC_k$}\label{sec:computing}
+
+\p Having established the relationships between $\LC_k$ and circuit complexity, we now turn to the computational problem itself: given a distribution $D$ as a truth table of size $N = 2^n$ and a parameter $l$, decide whether $\LC_k(D) \leq l$. We show that while the extreme case $l = 0$ is tractable, the general problem is conditionally hard for $k \geq 3$.
+
+\begin{lemma}\label{lem:testing-locality}
+Deciding whether $\LC_k(D) = 0$ (i.e., whether $D$ is $k$-local) can be done in time $\mathrm{poly}(N)$.
+\end{lemma}
+
+\begin{proof}
+By lemma~\ref{lem:zero-iff-local}, $\LC_k(D) = 0$ if and only if $D$ is $k$-local: the maximum entropy distribution consistent with the marginals of $D$ on subsets of size at most $k$ is $D$ itself. We can compute all $\binom{n}{k}$ marginals of $D$ directly from the truth table in $O(\binom{n}{k} \cdot N)$ time. Given these marginals, the maximum entropy distribution consistent with them can be found by iterative proportional fitting (Sinkhorn-type algorithms) or interior point methods for the dual convex program, both of which run in time $\mathrm{poly}(N)$. Comparing the resulting distribution to $D$ entry-by-entry completes the test.
+\end{proof}
+
+\p For $l > 0$, the problem becomes much harder. Using the Razborov--Rudich natural proofs barrier \cite{rr97}, we can show that computing $\LC_k$ in polynomial time would yield consequences believed to be impossible under standard cryptographic assumptions.
+
+\begin{theorem}\label{thm:hardness}
+For $k \geq 3$, assuming one-way functions exist, the decision problem ``given the truth table of $f : \{0,1\}^n \rightarrow \{0,1\}$ and a threshold $l$, is $\LC_k(D_f) \leq l$?''---where $D_f$ is the flat distribution on $f^{-1}(1)$---cannot be solved in $\mathrm{poly}(N)$ time.
+\end{theorem}
+
+\begin{proof}
+Suppose for contradiction that $\LC_k(D_f)$ can be computed in $\mathrm{poly}(N)$ time. We show that this yields a natural proof against $\mathrm{P/poly}$, contradicting the Razborov--Rudich theorem \cite{rr97} under the assumption that one-way functions exist.
+
+Fix a super-polynomial function $s(n)$ and define the property $R_s = \{f : \{0,1\}^n \rightarrow \{0,1\} \mid \LC_k(D_f) > s(n)\}$. We verify the three conditions of a natural proof:
+
+\textit{Constructivity.} If $\LC_k(D_f)$ is computable in $\mathrm{poly}(N)$ time, then membership in $R_s$ is decidable in $\mathrm{poly}(N)$ time.
+
+\textit{Largeness.} A random Boolean function $f$ on $n$ variables has $\mathrm{NSize}(f^{-1}(1)) = \Omega(2^n/n)$ with high probability, since the number of sets recognizable by nondeterministic circuits of complexity $t$ is at most $2^{O(t \log t)}$, which is $o(2^{2^n})$ for $t = o(2^n / n)$. By corollary~\ref{cor:lower-bound}, $\LC_k(D_f) = \Omega_k(\mathrm{NSize}(f^{-1}(1))^{1/k}) - n = \Omega_k(2^{n/k})$, which is super-polynomial. Thus $R_s$ contains almost all Boolean functions for any super-polynomial $s$.
+
+\textit{Usefulness against $\mathrm{P/poly}$.} If $f \in R_s$, then $\LC_k(D_f) > s(n)$, and by corollary~\ref{cor:flat-circuit}, $C_{k-1}(f^{-1}(1)) \geq \LC_k(D_f) > s(n)$. For $k \geq 3$, fan-in-$(k-1) \geq 2$. Since any fan-in-$2$ circuit of size $s$ can simulate any general circuit of size $s$ (by replacing each gate of fan-in $r$ with a tree of $r-1$ fan-in-$2$ gates), and conversely any circuit of size $s$ and arbitrary fan-in can be converted to fan-in~$2$ with at most quadratic overhead, we have the chain
+\[ C(f^{-1}(1)) \leq C_{k-1}(f^{-1}(1)) \leq C_2(f^{-1}(1)) \leq \mathrm{poly}(C(f^{-1}(1))). \]
+Therefore $C_{k-1}(f^{-1}(1)) > s(n)$ implies $C(f^{-1}(1)) \geq s(n)^{\Omega(1)}$, which is still super-polynomial, so $f \notin \mathrm{P/poly}$.
+
+By the Razborov--Rudich theorem, no natural proof against $\mathrm{P/poly}$ exists if one-way functions exist. This is a contradiction.
+\end{proof}
+
+\begin{remark}\label{rem:k-equals-2}
+The case $k = 2$ is genuinely different. The usefulness step above requires that fan-in-$(k-1)$ circuits can simulate general computation, which fails for $k = 2$: fan-in-$1$ circuits compute only functions of a single variable. The computational complexity of $\LC_2$ therefore remains open.
+\end{remark}
+
+\p The difficulty of computing $\LC_k$ can also be understood through its relationship to circuit minimization problems. For flat distributions, our upper and lower bounds sandwich $\LC_k$ between $\Omega_k(\mathrm{NSize}(S)^{1/k}) - n$ and $C_{k-1}(S)$, so computing $\LC_k$ would yield nontrivial information about both deterministic and nondeterministic circuit complexity. This connects $\LC_k$ to the Minimum Circuit Size Problem (MCSP) \cite{kc00}, a central open problem in computational complexity: MCSP asks whether a given truth table can be computed by a circuit of size at most $s$, and its complexity status remains unresolved despite decades of study.
+
+\section{Conclusion and Open Problems}\label{sec:conclusion}
+
+\p We have introduced the $k$-localization complexity $\LC_k(D)$ and established its place among existing complexity measures for distributions and sets. The key technique underlying our upper bounds is what we called local verification: because each gate in a bounded fan-in circuit depends on at most $k-1$ inputs, its correct operation can be enforced by a marginal constraint on $k$ variables. This transforms circuits into $k$-localizations. Conversely, the supports of marginal constraints can be brute-force verified by nondeterministic circuits, yielding our lower bound.
+
+\p We close with several directions for further investigation.
+
+\begin{open}\label{open:explicit-lower}
+Can we exhibit explicit families of distributions $\{D_n\}$ for which $\LC_k(D_n)$ is super-polynomial in $n$ for some fixed $k$? By our lower bound, this would require distributions whose supports have super-polynomial nondeterministic circuit complexity. Conversely, proving strong upper bounds on $\LC_k$ for all distributions would yield new circuit upper bounds.
+\end{open}
+
+\begin{open}\label{open:hierarchy}
+For what distributions does the hierarchy $\LC_2(D) \geq \LC_3(D) \geq \cdots \geq \LC_n(D) = 0$ exhibit sharp drops? That is, can we characterize distributions for which $\LC_k(D) \gg \LC_{k+1}(D)$, or for which $\LC_k(D) = \LC_{k+1}(D)$ for some $k < n$?
+\end{open}
+
+\begin{open}\label{open:graphical}
+The $k$-local distributions in this paper are closely related to Markov random fields with cliques of size at most $k$, where the distribution takes the Gibbs form $\rho(x) \propto \exp(\sum_i \lambda_i f_i(x_{S_i}))$ as shown in \cite{ja57}. The precise structural relationship between $k$-localization complexity and the treewidth or other structural parameters of graphical models \cite{wj08, la96} remains to be explored.
+\end{open}
+
+\begin{open}\label{open:computational}
+Theorem~\ref{thm:hardness} shows that computing $\LC_k(D)$ from a truth table is conditionally hard for $k \geq 3$. Several questions remain: what is the exact complexity-theoretic status of this problem (e.g., is it $\Sigma_2^p$-complete, or does it have intermediate status like MCSP)? Can $\LC_k(D)$ be efficiently approximated to within polynomial factors? What is the complexity of $\LC_2$, where the natural proofs barrier does not apply? And what happens when $D$ is given not as a truth table but as a circuit or sampling oracle?
+\end{open}
+
+\medskip
+\printbibliography
+
+\end{document}

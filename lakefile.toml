@@ -1,0 +1,15 @@
+name = "KLocality"
+version = "0.1.0"
+defaultTargets = ["KLocality"]
+
+[[require]]
+name = "cslib"
+git = "https://github.com/SamuelSchlesinger/cslib.git"
+rev = "7aecacb"
+
+[[lean_lib]]
+name = "KLocality"
+
+[[lean_exe]]
+name = "klocality"
+root = "Main"

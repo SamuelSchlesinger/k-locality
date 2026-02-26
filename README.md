@@ -1,10 +1,17 @@
 # Localization Complexity
 
-This repository contains the paper "Localization Complexity: Connecting Maximum Entropy Models and Circuit Complexity" by Samuel Schlesinger and Joshua Grochow.
+This repository contains the paper **"Localization Complexity: Core Definitions and Circuit Connections"** by Samuel Schlesinger and Joshua Grochow.
 
-## Abstract
+## Scope
 
-We introduce the *k*-localization complexity L_k(D) of a probability distribution D, defined as the minimum number of latent variables needed to represent D as the marginal of a *k*-local distribution — one whose probability mass function is the maximum entropy distribution consistent with marginal constraints on at most *k* variables. Drawing on the Hammersley–Clifford factorization theorem and the theory of exponential families, we connect this measure to several notions of circuit complexity via a technique we call *local verification*: because each gate in a bounded fan-in circuit depends on few inputs, its correct operation can be enforced by a single marginal constraint.
+This draft focuses on:
+
+- Core definitions: marginal models, *k*-local distributions, *k*-localizations, and localization complexity `L_k(D)`.
+- A central **local verification theorem** that certifies when a uniform trace distribution is maximum-entropy under local constraints.
+- Three circuit-to-localization upper bounds:
+  - `L_k(D) <= G_{k-1}(D)` (generator complexity),
+  - `L_k(D) <= C_{k-1}(S)` for flat `D` on support `S`,
+  - `L_k(D) <= W_{k-1}(D)` (witness-counting complexity).
 
 ## Building
 
@@ -15,4 +22,25 @@ pdflatex main.tex
 biber main
 pdflatex main.tex
 pdflatex main.tex
+```
+
+## Lean Formalization
+
+This repository also contains a Lean 4 project (`KLocality`) for formalizing the current core results.
+
+- `lakefile.toml` depends on local `cslib` at `../cslib`.
+- `KLocality/Core.lean` re-exports the Cslib foundations and includes:
+  - support-level `k`-locality and localization definitions,
+  - entropy lemmas (`H(p) <= log |S|` for support-constrained `p`, exact entropy of `uniformOn`),
+  - a finite local-verification max-entropy certificate,
+  - marginal-constraint foundations (`MarginalConstraint`, `FeasibleMarginals`, and
+    max-entropy `k`-local marginal certificates),
+  - a formal `localizationComplexity` (`Nat.find`) API with monotonicity.
+- `KLocality/CircuitConnections.lean` contains witness-level circuit bridges and derived
+  `localizationComplexity` upper bounds from those witnesses.
+
+Build with:
+
+```bash
+lake build
 ```

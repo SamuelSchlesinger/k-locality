@@ -31,6 +31,13 @@ abbrev MarginalConstraintsRespectK {Var : Type u} {Val : Type v} [DecidableEq Va
   Probability.MarginalConstraintsRespectK (Var := Var) (Val := Val)
 abbrev MarginalLocalCompleteness {Var : Type u} {Val : Type v} [DecidableEq Var] :=
   Probability.MarginalLocalCompleteness (Var := Var) (Val := Val)
+abbrev LocalSupportSet {Var : Type u} {Val : Type v} [DecidableEq Var] :=
+  Probability.LocalSupportSet (Var := Var) (Val := Val)
+abbrev MaximalSupport {Var : Type u} {Val : Type v} [DecidableEq Var] :=
+  Probability.MaximalSupport (Var := Var) (Val := Val)
+abbrev MaximalSupportHypothesis {Var : Type u} {Val : Type v} [DecidableEq Var]
+    [Fintype (Assignment Var Val)] :=
+  Probability.MaximalSupportHypothesis (Var := Var) (Val := Val)
 abbrev IsKLocalMarginal {Var : Type u} {Val : Type v} [DecidableEq Var]
     [Fintype (Assignment Var Val)] :=
   Probability.IsKLocalMarginal (Var := Var) (Val := Val)
@@ -115,6 +122,24 @@ theorem local_verification_max_entropy_marginals_on_finset
     IsMaxEntropyAmong (FeasibleMarginals constraints) (Probability.uniformOn target hTarget) :=
   Probability.localVerificationMaximumEntropyMarginalsOnFinset target hTarget constraints hComplete
     hUniformFeasible
+
+theorem support_subset_local_support_set_of_feasible_marginals
+    {Var : Type u} {Val : Type v}
+    [DecidableEq Var]
+    {constraints : List (MarginalConstraint Var Val)}
+    {q : Distribution (Assignment Var Val)}
+    (hFeasible : FeasibleMarginals constraints q) :
+    q.support ⊆ LocalSupportSet constraints :=
+  Probability.support_subset_localSupportSet_of_feasibleMarginals hFeasible
+
+theorem maximal_support_of_hypothesis
+    {Var : Type u} {Val : Type v}
+    [DecidableEq Var] [Fintype (Assignment Var Val)]
+    {constraints : List (MarginalConstraint Var Val)}
+    {q : Distribution (Assignment Var Val)}
+    (h : MaximalSupportHypothesis constraints q) :
+    MaximalSupport constraints q :=
+  Probability.maximalSupport_of_hypothesis h
 
 theorem local_verification_is_k_local_marginal_on_finset
     {Var : Type u} {Val : Type v}

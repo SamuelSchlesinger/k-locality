@@ -12,6 +12,8 @@ This draft focuses on:
   - `L_k(D) <= G_{k-1}(D)` (generator complexity),
   - `L_k(D) <= C_{k-1}(S)` for flat `D` on support `S`,
   - `L_k(D) <= W_{k-1}(D)` (witness-counting complexity).
+- A conditional converse section linking `L_k` to nondeterministic support complexity
+  under an explicit maximal-support hypothesis.
 
 ## Building
 
@@ -28,7 +30,7 @@ pdflatex main.tex
 
 This repository also contains a Lean 4 project (`KLocality`) for formalizing the current core results.
 
-- `lakefile.toml` depends on local `cslib` at `../cslib`.
+- `lakefile.toml` depends on the `SamuelSchlesinger/cslib` fork.
 - `KLocality/Core.lean` re-exports the Cslib foundations and includes:
   - support-level `k`-locality and localization definitions,
   - entropy lemmas (`H(p) <= log |S|` for support-constrained `p`, exact entropy of `uniformOn`),
@@ -38,6 +40,9 @@ This repository also contains a Lean 4 project (`KLocality`) for formalizing the
   - a formal `localizationComplexity` (`Nat.find`) API with monotonicity.
 - `KLocality/CircuitConnections.lean` contains witness-level circuit bridges and derived
   `localizationComplexity` upper bounds from those witnesses.
+- `KLocality/NondeterministicConverse.lean` contains the formal conditional converse
+  framework (projection + local-check compilation assumptions) and the resulting
+  support-complexity upper bound at both witness level and `localizationComplexity`.
 
 Build with:
 

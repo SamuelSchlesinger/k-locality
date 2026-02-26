@@ -219,9 +219,78 @@ The observed marginal is
 by definition of witness-counting model. Hence this is a $k$-localization with $m+s$ latent variables. Minimizing proves the theorem.
 \end{proof}
 
+\section{Conditional Converse via Maximal Support}
+We now record a converse direction under an explicit hypothesis about the support of max-entropy optimizers.
+Write $\mathrm{NSize}(S)$ for the minimum size of a nondeterministic Boolean circuit recognizing $S\subseteq\{0,1\}^n$.
+
+\begin{definition}[Local support set]
+For local constraints $\Phi=\{(S_i,\phi_i)\}_{i=1}^m$ on $N$ variables, define
+\[
+T_\Phi=\{y\in\{0,1\}^N:\forall i\in[m],\ \phi_i(y_{S_i})>0\}.
+\]
+\end{definition}
+
+\begin{definition}[Maximal-support hypothesis]
+We say $(\Phi,Q)$ satisfies maximal support if $Q$ is a maximum-entropy feasible distribution for $\Phi$ and
+\[
+\mathrm{supp}(Q)=T_\Phi.
+\]
+\end{definition}
+
+\begin{lemma}[Localization to nondeterministic recognition]\label{lem:loc-to-nondet}
+Fix $k\ge2$. Let $D$ be a distribution on $\{0,1\}^n$ with support $S$. Suppose $D$ has a $k$-localization $Q$ with $l$ latent bits, witnessed by constraints
+\[
+\Phi=\{(S_i,\phi_i)\}_{i=1}^m,\qquad |S_i|\le k,
+\]
+and assume $(\Phi,Q)$ satisfies maximal support.
+
+Let $L_k$ be an upper bound on deterministic circuit size for recognizing arbitrary $k$-bit relations. Then
+\[
+\mathrm{NSize}(S)\le l + mL_k + 1.
+\]
+\end{lemma}
+
+\begin{proof}
+Build a nondeterministic circuit with visible input $x\in\{0,1\}^n$ and witness $h\in\{0,1\}^l$, viewed together as $y=(x,h)\in\{0,1\}^{n+l}$.
+
+For each constraint $i$, add a deterministic subcircuit $C_i$ that checks whether the local tuple $y_{S_i}$ is in $\mathrm{supp}(\phi_i)$. By definition of $L_k$, each $C_i$ has size at most $L_k$. Let the top gate compute $\bigwedge_{i=1}^m C_i(y)$.
+
+The circuit accepts exactly those $(x,h)$ in $T_\Phi$. By maximal support, this is exactly $\mathrm{supp}(Q)$. Therefore
+\[
+x\in S \iff \exists h\in\{0,1\}^l\ \text{s.t.}\ (x,h)\in \mathrm{supp}(Q)
+\iff \exists h\ \text{s.t.}\ (x,h)\in T_\Phi,
+\]
+so the circuit recognizes $S$. The size is at most $l + mL_k + 1$.
+\end{proof}
+
+\begin{corollary}[Conditional lower bound]\label{cor:conditional-lower}
+Assume every optimal $k$-localization witness can be chosen with at most
+\[
+M_k(N):=\sum_{j=1}^k \binom{N}{j}
+\]
+constraints on $N$ variables, and satisfies maximal support. Then for every $D$ on $\{0,1\}^n$ with support $S$,
+\[
+\mathrm{NSize}(S)\le \LC_k(D) + M_k\!\big(n+\LC_k(D)\big)\,L_k + 1.
+\]
+In particular, for fixed $k$, this implies
+\[
+\LC_k(D)=\Omega_k\!\big(\mathrm{NSize}(S)^{1/k}\big)-n.
+\]
+\end{corollary}
+
+\begin{proof}
+Apply Lemma~\ref{lem:loc-to-nondet} to an optimal $k$-localization with $l=\LC_k(D)$.
+For fixed $k$, $M_k(N)=O_k(N^k)$, so
+\[
+\mathrm{NSize}(S)\le O_k\!\big((n+\LC_k(D))^k\big),
+\]
+and rearranging gives the stated asymptotic lower bound.
+\end{proof}
+
 \section{Summary}
 The paper isolates one reusable proof pattern: local circuit consistency constraints can force global trace validity, and once this local completeness condition is met, uniform trace distributions are maximum-entropy $k$-local models. This gives direct, clean upper bounds relating localization complexity to three bounded fan-in circuit measures.
-% TODO(rebuild): Re-add lower bounds connecting \LC_k to nondeterministic complexity.
+% TODO(rebuild): Replace the maximal-support hypothesis with a proved theorem
+% (or a strictly weaker sufficient condition) to make the converse unconditional.
 % TODO(rebuild): Re-add a section on computing \LC_k (algorithms/decision problems).
 % TODO(rebuild): Re-add conditional hardness discussion (natural-proofs framing),
 % but only with assumptions and statements aligned to the standard literature.

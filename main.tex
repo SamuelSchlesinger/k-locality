@@ -23,19 +23,18 @@
 \maketitle
 
 \begin{abstract}
-We define the $k$-localization complexity $\LC_k(D)$ of a distribution $D$ as the minimum number of latent variables needed to realize $D$ as the observed marginal of a $k$-local maximum-entropy model. We then isolate a single technical mechanism---\emph{local verification}---that converts bounded fan-in circuit computations into $k$-local models. This yields three clean upper bounds:
+We define the $k$-localization complexity $\LC_k(D)$ of a distribution $D$ as the minimum number of latent variables needed to realize $D$ as the observed marginal of a $k$-local maximum-entropy model. We isolate one technical mechanism---\emph{local verification}---that converts bounded fan-in deterministic circuit computations into $k$-local models. This yields:
 \[
 \LC_k(D) \leq G_{k-1}(D),\qquad
-\LC_k(D) \leq C_{k-1}(S) \text{ for flat } D,\qquad
-\LC_k(D) \leq W_{k-1}(D).
+\LC_k(D) \leq C_{k-1}(S) \text{ for flat } D.
 \]
-The paper is intentionally restricted to the foundational definitions, core lemmas, and proofs of these connections.
+The paper is intentionally restricted to foundational definitions, the local-verification theorem, and these deterministic circuit upper bounds.
 \end{abstract}
 
 \section{Introduction}
 Complexity measures for distributions ask how succinctly a computational model can represent a target distribution \cite{vi10}. We introduce and study one such measure based on local maximum-entropy structure.
 
-The purpose of this paper is narrow: define the model precisely and prove its direct connections to bounded fan-in circuits. We do not pursue computational hardness questions here.
+The purpose of this paper is narrow: define the model precisely and prove its direct connections to bounded fan-in circuit complexity. We do not pursue algorithmic hardness of computing $\LC_k$ from an explicit input representation here.
 % TODO(rebuild): Re-add a full "Preliminaries" section if/when we expand scope,
 % including entropy/exponential-family background and any required circuit conventions.
 
@@ -43,7 +42,7 @@ The purpose of this paper is narrow: define the model precisely and prove its di
 \begin{itemize}
 \item We define $k$-local distributions, $k$-localizations, and localization complexity $\LC_k(D)$.
 \item We prove a general local-verification theorem: if local constraints forbid every invalid global configuration, then the uniform distribution on valid traces is a maximum-entropy feasible point.
-\item Using this theorem, we prove upper bounds from three circuit-style measures: generator complexity, flat-support circuit complexity, and witness-counting complexity.
+\item Using this theorem, we prove upper bounds from two deterministic circuit measures: generator complexity and flat-support circuit complexity.
 \end{itemize}
 
 \section{Model and Basic Definitions}
@@ -86,8 +85,6 @@ Any constraint on at most $k_2$ variables is also a constraint on at most $k_1$ 
 
 \section{A Local Verification Theorem}
 The following lemma is the core mechanism used in all circuit reductions.
-% TODO(rebuild): Consider re-introducing a support-intersection style lemma with
-% precise regularity assumptions (or a corrected alternative) if needed for converse bounds.
 
 \begin{theorem}[Local verification]\label{thm:local-verification}
 Let $T\subseteq\{0,1\}^N$ be nonempty, and let $U_T$ be the uniform distribution on $T$. Let $\{(S_i,\phi_i)\}_{i=1}^t$ be local constraints where each $|S_i|\le k$ and each $\phi_i$ is the $S_i$-marginal of $U_T$.
@@ -112,7 +109,11 @@ where equality on the right is the entropy of the uniform distribution on $T$. S
 \end{proof}
 
 \section{Circuit-Based Upper Bounds}
-We now instantiate Theorem~\ref{thm:local-verification} for three circuit models.
+We now instantiate Theorem~\ref{thm:local-verification} for two deterministic circuit models.
+
+\begin{definition}
+Let $C_r(S)$ be the minimum number of gates (including the output gate) in a fan-in-$r$ deterministic circuit that recognizes $S\subseteq\{0,1\}^n$.
+\end{definition}
 
 \subsection{Generator Complexity}
 
@@ -152,10 +153,6 @@ So $U_T$ is a $k$-localization with $m+s$ latent variables, proving $\LC_k(D)\le
 
 \subsection{Flat Distributions and Recognizer Circuits}
 
-\begin{definition}
-Let $C_r(S)$ be the minimum number of gates (including the output gate) in a fan-in-$r$ circuit that recognizes $S\subseteq\{0,1\}^n$.
-\end{definition}
-
 \begin{theorem}\label{thm:flat}
 If $D$ is flat on support $S$, then for every $k\ge2$,
 \[
@@ -177,123 +174,9 @@ By the same topological-induction argument as in Theorem~\ref{thm:generator}, an
 Its observed marginal on $x$ is uniform on $S$, i.e. exactly $D$. Therefore $\LC_k(D)\le s$, and minimizing over $C$ yields the bound.
 \end{proof}
 
-\subsection{Witness-Counting Complexity}
-
-\begin{definition}[Witness-counting model]
-A fan-in-$r$ nondeterministic circuit $C(x,h)$ with $n$ visible bits $x$ and $m$ witness bits $h$ is a witness-counting model for $D$ if
-\[
-\sum_{x'\in\{0,1\}^n}|\{h:C(x',h)=1\}|>0
-\]
-and
-\[
-\rho(x)=\frac{|\{h:C(x,h)=1\}|}{\sum_{x'\in\{0,1\}^n}|\{h:C(x',h)=1\}|}
-\quad\text{for all }x.
-\]
-Define
-\[
-W_r(D)=\min_C\big(m(C)+s(C)\big),
-\]
-where $s(C)$ is the total number of gates (including the output gate).
-\end{definition}
-
-\begin{theorem}\label{thm:witness}
-For every $k\ge2$,
-\[
-\LC_k(D)\le W_{k-1}(D).
-\]
-\end{theorem}
-
-\begin{proof}
-Take a fan-in-$(k-1)$ witness-counting circuit $C(x,h)$ with $m$ witness bits and $s$ gates total. Let $g(x,h)$ be its full gate-value vector (including the output bit) and define
-\[
-T=\{(x,h,g(x,h)):\ C(x,h)=1\}.
-\]
-Let $U_T$ be uniform on $T$, with observed variables $x$ and latent variables $(h,g)$.
-
-Add local constraints for each computed-node relation and the unary constraint that the output bit is $1$. As in Theorem~\ref{thm:generator}, satisfying all computed-node relations forces a valid circuit trace for $(x,h)$; with the unary output-$1$ constraint this is equivalent to $C(x,h)=1$, i.e. membership in $T$. Hence any assignment outside $T$ violates one of these local constraints, so local completeness holds. By Theorem~\ref{thm:local-verification}, $U_T$ is $k$-local.
-
-The observed marginal is
-\[
-\Pr_{U_T}(X=x)=\frac{|\{h:C(x,h)=1\}|}{|T|}=\rho(x),
-\]
-by definition of witness-counting model. Hence this is a $k$-localization with $m+s$ latent variables. Minimizing proves the theorem.
-\end{proof}
-
-\section{Conditional Converse via Maximal Support}
-We now record a converse direction under an explicit hypothesis about the support of max-entropy optimizers.
-Write $\mathrm{NSize}(S)$ for the minimum size of a nondeterministic Boolean circuit recognizing $S\subseteq\{0,1\}^n$.
-
-\begin{definition}[Local support set]
-For local constraints $\Phi=\{(S_i,\phi_i)\}_{i=1}^m$ on $N$ variables, define
-\[
-T_\Phi=\{y\in\{0,1\}^N:\forall i\in[m],\ \phi_i(y_{S_i})>0\}.
-\]
-\end{definition}
-
-\begin{definition}[Maximal-support hypothesis]
-We say $(\Phi,Q)$ satisfies maximal support if $Q$ is a maximum-entropy feasible distribution for $\Phi$ and
-\[
-\mathrm{supp}(Q)=T_\Phi.
-\]
-\end{definition}
-
-\begin{lemma}[Localization to nondeterministic recognition]\label{lem:loc-to-nondet}
-Fix $k\ge2$. Let $D$ be a distribution on $\{0,1\}^n$ with support $S$. Suppose $D$ has a $k$-localization $Q$ with $l$ latent bits, witnessed by constraints
-\[
-\Phi=\{(S_i,\phi_i)\}_{i=1}^m,\qquad |S_i|\le k,
-\]
-and assume $(\Phi,Q)$ satisfies maximal support.
-
-Let $L_k$ be an upper bound on deterministic circuit size for recognizing arbitrary $k$-bit relations. Then
-\[
-\mathrm{NSize}(S)\le l + mL_k + 1.
-\]
-\end{lemma}
-
-\begin{proof}
-Build a nondeterministic circuit with visible input $x\in\{0,1\}^n$ and witness $h\in\{0,1\}^l$, viewed together as $y=(x,h)\in\{0,1\}^{n+l}$.
-
-For each constraint $i$, add a deterministic subcircuit $C_i$ that checks whether the local tuple $y_{S_i}$ is in $\mathrm{supp}(\phi_i)$. By definition of $L_k$, each $C_i$ has size at most $L_k$. Let the top gate compute $\bigwedge_{i=1}^m C_i(y)$.
-
-The circuit accepts exactly those $(x,h)$ in $T_\Phi$. By maximal support, this is exactly $\mathrm{supp}(Q)$. Therefore
-\[
-x\in S \iff \exists h\in\{0,1\}^l\ \text{s.t.}\ (x,h)\in \mathrm{supp}(Q)
-\iff \exists h\ \text{s.t.}\ (x,h)\in T_\Phi,
-\]
-so the circuit recognizes $S$. The size is at most $l + mL_k + 1$.
-\end{proof}
-
-\begin{corollary}[Conditional lower bound]\label{cor:conditional-lower}
-Assume every optimal $k$-localization witness can be chosen with at most
-\[
-M_k(N):=\sum_{j=1}^k \binom{N}{j}
-\]
-constraints on $N$ variables, and satisfies maximal support. Then for every $D$ on $\{0,1\}^n$ with support $S$,
-\[
-\mathrm{NSize}(S)\le \LC_k(D) + M_k\!\big(n+\LC_k(D)\big)\,L_k + 1.
-\]
-In particular, for fixed $k$, this implies
-\[
-\LC_k(D)=\Omega_k\!\big(\mathrm{NSize}(S)^{1/k}\big)-n.
-\]
-\end{corollary}
-
-\begin{proof}
-Apply Lemma~\ref{lem:loc-to-nondet} to an optimal $k$-localization with $l=\LC_k(D)$.
-For fixed $k$, $M_k(N)=O_k(N^k)$, so
-\[
-\mathrm{NSize}(S)\le O_k\!\big((n+\LC_k(D))^k\big),
-\]
-and rearranging gives the stated asymptotic lower bound.
-\end{proof}
-
 \section{Summary}
-The paper isolates one reusable proof pattern: local circuit consistency constraints can force global trace validity, and once this local completeness condition is met, uniform trace distributions are maximum-entropy $k$-local models. This gives direct, clean upper bounds relating localization complexity to three bounded fan-in circuit measures.
-% TODO(rebuild): Replace the maximal-support hypothesis with a proved theorem
-% (or a strictly weaker sufficient condition) to make the converse unconditional.
+The paper isolates one reusable proof pattern: local circuit consistency constraints can force global trace validity, and once this local completeness condition is met, uniform trace distributions are maximum-entropy $k$-local models. This gives direct upper bounds relating localization complexity to bounded fan-in deterministic circuit measures.
 % TODO(rebuild): Re-add a section on computing \LC_k (algorithms/decision problems).
-% TODO(rebuild): Re-add conditional hardness discussion (natural-proofs framing),
-% but only with assumptions and statements aligned to the standard literature.
 % TODO(rebuild): Re-add expanded open problems once the technical scope is restored.
 
 \medskip

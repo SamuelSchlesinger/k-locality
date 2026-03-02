@@ -1,0 +1,166 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[margin=1in]{geometry}
+
+\title{Counterexample Note: Interior Feasibility Is Not Implied by Local Positivity}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{What we attempted}
+Before proving the \(m \le M_k(N)\) lemma, we tested whether the converse could be made unconditional by dropping the interior-feasibility assumption.
+
+The hoped-for claim was:
+\[
+\mathcal{F}_\Phi \neq \varnothing
+\quad\Longrightarrow\quad
+\exists P^\circ \in \mathcal{F}_\Phi \text{ with } \operatorname{supp}(P^\circ)=T_\Phi,
+\]
+where
+\[
+T_\Phi := \{y : \forall i,\ \phi_i(y_{S_i})>0\}.
+\]
+If true, this would remove the extra regularity assumption from the maximal-support step.
+
+\section*{Counterexample}
+Take \(n=3\), \(k=2\), and constraints \(\Phi=\{\phi_{XY},\phi_{XZ},\phi_{YZ}\}\) with pairwise marginals
+\[
+\phi_{XY}=
+\begin{array}{c|cc}
+ & Y=0 & Y=1\\\hline
+X=0 & \tfrac{9}{20} & \tfrac{1}{20}\\
+X=1 & \tfrac{1}{20} & \tfrac{9}{20}
+\end{array},
+\quad
+\phi_{XZ}=
+\begin{array}{c|cc}
+ & Z=0 & Z=1\\\hline
+X=0 & \tfrac{2}{5} & \tfrac{1}{10}\\
+X=1 & \tfrac{1}{10} & \tfrac{2}{5}
+\end{array},
+\]
+\[
+\phi_{YZ}=
+\begin{array}{c|cc}
+ & Z=0 & Z=1\\\hline
+Y=0 & \tfrac{7}{20} & \tfrac{3}{20}\\
+Y=1 & \tfrac{3}{20} & \tfrac{7}{20}
+\end{array}.
+\]
+Every local entry is strictly positive, so \(T_\Phi=\{0,1\}^3\).
+
+Let \(p_{xyz}=\Pr(X=x,Y=y,Z=z)\). Solving the linear marginal equations gives
+\[
+\begin{aligned}
+p_{000}&=\tfrac{7}{10}-t, & p_{001}&=-\tfrac14+t, & p_{010}&=-\tfrac{3}{10}+t, & p_{011}&=\tfrac{7}{20}-t,\\
+p_{100}&=-\tfrac{7}{20}+t, & p_{101}&=\tfrac25-t, & p_{110}&=\tfrac{9}{20}-t, & p_{111}&=t.
+\end{aligned}
+\]
+Nonnegativity imposes \(t\ge \tfrac{7}{20}\) (from \(p_{100}\ge0\)) and \(t\le \tfrac{7}{20}\) (from \(p_{011}\ge0\)), hence \(t=\tfrac{7}{20}\) is forced.
+
+Therefore the unique feasible joint is
+\[
+(p_{000},p_{001},p_{010},p_{011},p_{100},p_{101},p_{110},p_{111})
+=\Big(\tfrac{7}{20},\tfrac{1}{10},\tfrac{1}{20},0,0,\tfrac{1}{20},\tfrac{1}{10},\tfrac{7}{20}\Big),
+\]
+which has zeros at \(011\) and \(100\).
+
+So \(\mathcal{F}_\Phi\neq\varnothing\), but no feasible \(P^\circ\) is strictly positive on \(T_\Phi\). Interior feasibility fails.
+
+\section*{Why this is a dead end}
+This shows that \emph{local positivity of marginals} does not guarantee a feasible distribution with full support on \(T_\Phi\). Global compatibility can force the feasible set onto a boundary face of the simplex, even when every locally checked tuple is allowed.
+
+So the route ``consistency \(+\) local positivity \(\Rightarrow\) maximal support'' is false in general, and the converse argument needs an extra hypothesis (or a stronger structural condition) beyond consistency.
+
+\section*{Python code used}
+The script below (standard library only) computes the affine solution family and the feasible interval for \(t\) exactly over \(\mathbb{Q}\).
+
+\begin{verbatim}
+from fractions import Fraction
+from itertools import product
+
+states=list(product([0,1],[0,1],[0,1]))
+idx={s:i for i,s in enumerate(states)}
+
+mxy={(0,0):Fraction(9,20),(0,1):Fraction(1,20),(1,0):Fraction(1,20),(1,1):Fraction(9,20)}
+mxz={(0,0):Fraction(2,5),(0,1):Fraction(1,10),(1,0):Fraction(1,10),(1,1):Fraction(2,5)}
+myz={(0,0):Fraction(7,20),(0,1):Fraction(3,20),(1,0):Fraction(3,20),(1,1):Fraction(7,20)}
+
+A=[]; b=[]
+A.append([Fraction(1) for _ in states]); b.append(Fraction(1))
+for uv in product([0,1],[0,1]):
+    row=[Fraction(0) for _ in states]
+    for s,i in idx.items():
+        if (s[0],s[1])==uv: row[i]=Fraction(1)
+    A.append(row); b.append(mxy[uv])
+for uv in product([0,1],[0,1]):
+    row=[Fraction(0) for _ in states]
+    for s,i in idx.items():
+        if (s[0],s[2])==uv: row[i]=Fraction(1)
+    A.append(row); b.append(mxz[uv])
+for uv in product([0,1],[0,1]):
+    row=[Fraction(0) for _ in states]
+    for s,i in idx.items():
+        if (s[1],s[2])==uv: row[i]=Fraction(1)
+    A.append(row); b.append(myz[uv])
+
+m=len(A); n=len(states)
+M=[A[i]+[b[i]] for i in range(m)]
+
+# RREF over Fractions
+r=0
+pivot=[]
+for c in range(n):
+    piv=None
+    for i in range(r,m):
+        if M[i][c] != 0:
+            piv=i; break
+    if piv is None:
+        continue
+    M[r],M[piv]=M[piv],M[r]
+    pv=M[r][c]
+    M[r]=[x/pv for x in M[r]]
+    for i in range(m):
+        if i!=r and M[i][c]!=0:
+            fac=M[i][c]
+            M[i]=[M[i][j]-fac*M[r][j] for j in range(n+1)]
+    pivot.append(c)
+    r+=1
+
+free=[j for j in range(n) if j not in pivot]
+j=free[0]  # here, p_111 = t
+print("Free variable =", states[j])
+for i,c in enumerate(pivot):
+    coeff = -M[i][j]
+    print(f"p{states[c]} = {M[i][n]} + ({coeff})*t")
+
+# Interval from nonnegativity A0 + B t >= 0
+low=None; high=None
+for i in range(n):
+    if i==j:
+        A0=Fraction(0); B=Fraction(1)
+    else:
+        row_i = pivot.index(i)
+        A0=M[row_i][n]
+        B=-M[row_i][j]
+    if B==0:
+        assert A0 >= 0
+    elif B>0:
+        bound = -A0/B
+        low = bound if low is None or bound>low else low
+    else:
+        bound = -A0/B
+        high = bound if high is None or bound<high else high
+
+print("t in [", low, ",", high, "]")
+\end{verbatim}
+
+Expected final line:
+\begin{verbatim}
+t in [ 7/20 , 7/20 ]
+\end{verbatim}
+
+\end{document}

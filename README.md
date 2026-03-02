@@ -8,12 +8,9 @@ This draft focuses on:
 
 - Core definitions: marginal models, *k*-local distributions, *k*-localizations, and localization complexity `L_k(D)`.
 - A central **local verification theorem** that certifies when a uniform trace distribution is maximum-entropy under local constraints.
-- Three circuit-to-localization upper bounds:
+- Two deterministic circuit-to-localization upper bounds:
   - `L_k(D) <= G_{k-1}(D)` (generator complexity),
-  - `L_k(D) <= C_{k-1}(S)` for flat `D` on support `S`,
-  - `L_k(D) <= W_{k-1}(D)` (witness-counting complexity).
-- A conditional converse section linking `L_k` to nondeterministic support complexity
-  under an explicit maximal-support hypothesis.
+  - `L_k(D) <= C_{k-1}(S)` for flat `D` on support `S`.
 
 ## Building
 
@@ -28,21 +25,34 @@ pdflatex main.tex
 
 ## Lean Formalization
 
-This repository also contains a Lean 4 project (`KLocality`) for formalizing the current core results.
+This repository also contains a Lean 4 project (`KLocality`) formalizing the deterministic results in the paper and the interior-feasibility counterexample.
 
-- `lakefile.toml` depends on the `SamuelSchlesinger/cslib` fork.
-- `KLocality/Core.lean` re-exports the Cslib foundations and includes:
-  - support-level `k`-locality and localization definitions,
-  - entropy lemmas (`H(p) <= log |S|` for support-constrained `p`, exact entropy of `uniformOn`),
-  - a finite local-verification max-entropy certificate,
-  - marginal-constraint foundations (`MarginalConstraint`, `FeasibleMarginals`, and
-    max-entropy `k`-local marginal certificates),
-  - a formal `localizationComplexity` (`Nat.find`) API with monotonicity.
-- `KLocality/CircuitConnections.lean` contains witness-level circuit bridges and derived
-  `localizationComplexity` upper bounds from those witnesses.
-- `KLocality/NondeterministicConverse.lean` contains the formal conditional converse
-  framework (projection + local-check compilation assumptions) and the resulting
-  support-complexity upper bound at both witness level and `localizationComplexity`.
+- `lakefile.toml` depends on the `SamuelSchlesinger/cslib` fork for circuit formalization.
+- `KLocality/Core.lean` now defines locality internals locally in this repository:
+  - scoped marginal constraints over finite variable sets,
+  - `k`-locality via maximum-entropy under those constraints,
+  - a proved local-verification theorem in the marginal setting:
+    `localVerificationMaximumEntropyMarginalsOnFinset` and
+    `localVerificationIsKLocalMarginalOnFinset`,
+  - a concrete witness format `LocalVerificationWitness` and constructor
+    `kLocalizationOfWitness`,
+  - marginal models, `k`-localizations, and localization complexity (`Nat.find`) with monotonicity lemmas.
+- `KLocality/CircuitConnections.lean` contains deterministic witness-level bridges and derived
+  paper-shaped complexity definitions and upper-bound statements:
+  - `CComplexity` for fan-in-`r` recognizer size (`C_r(S)`),
+  - `GComplexity` for fan-in-`r` generator complexity (`G_r(D)`),
+  - paper-notation aliases `C_r`, `G_r`, and `LC_k`,
+  - bridge assumptions are now concrete local-verification witness builders
+    (`GeneratorToLocalizationBridge`, `FlatRecognizerToLocalizationBridge`)
+    instead of opaque existence maps,
+  - `localizationComplexity_le_GComplexity` and
+    `localizationComplexity_le_CComplexity_of_flat_bridge`,
+  - paper-notation theorem aliases `LC_k_le_G_r` and `LC_k_le_C_r_of_flat`, which line up with
+    `LC_k(D) ≤ G_{k-1}(D)` and `LC_k(D) ≤ C_{k-1}(S)` once the corresponding
+    circuit-to-localization bridge hypotheses are supplied.
+- `KLocality/InteriorFeasibilityCounterexample.lean` contains a concrete finite-dimensional
+  counterexample showing that pairwise-local feasibility does not imply a strictly positive
+  global feasible point (interior feasibility can fail).
 
 Build with:
 

@@ -1,4 +1,11 @@
 -- Root module for the k-locality formalization library.
 import KLocality.Core
+import KLocality.GroundState
+import KLocality.GroundStateProjection
 import KLocality.CircuitConnections
 import KLocality.InteriorFeasibilityCounterexample
+import KLocality.QuadraticNAND
+import KLocality.NANDCircuit
+import KLocality.NANDCircuitLocalization
+import KLocality.NANDCircuitWithConstants
+import KLocality.NANDCircuitWithConstantsLocalization

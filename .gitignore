@@ -15,3 +15,10 @@
 
 # PDF output
 *.pdf
+
+# Editor/sync conflict artifacts
+*-SAVE-ERROR
+
+# Scratch and generated output
+/tmp/
+/output/

@@ -5,7 +5,7 @@ defaultTargets = ["KLocality"]
 [[require]]
 name = "cslib"
 git = "https://github.com/SamuelSchlesinger/cslib.git"
-rev = "8265e6c1b42b93a8b1573ee3f3179e4f8db5d1c6"
+rev = "89619147bf2ef78b8f04c66cbb41546d4757554e"
 
 [[lean_lib]]
 name = "KLocality"

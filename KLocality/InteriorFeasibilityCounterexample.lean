@@ -63,6 +63,43 @@ def boundaryWitness : Joint3 where
   p110 := 1 / 10
   p111 := 7 / 20
 
+/-- Embed a Boolean value into the rationals for the exposing polynomial below. -/
+def bitRat (b : Bool) : ℚ :=
+  if b then 1 else 0
+
+/-- The quadratic energy exposing the feasible support face:
+`x - x*y - x*z + y*z = (x-y)(x-z)` on Boolean inputs. -/
+def quadraticEnergy (x y z : Bool) : ℚ :=
+  bitRat x - bitRat x * bitRat y - bitRat x * bitRat z + bitRat y * bitRat z
+
+theorem quadraticEnergy_nonneg (x y z : Bool) :
+    0 ≤ quadraticEnergy x y z := by
+  cases x <;> cases y <;> cases z <;> norm_num [quadraticEnergy, bitRat]
+
+/-- The energy is positive exactly at the two globally forbidden states. -/
+theorem quadraticEnergy_eq_one_iff (x y z : Bool) :
+    quadraticEnergy x y z = 1 ↔
+      (x = false ∧ y = true ∧ z = true) ∨
+      (x = true ∧ y = false ∧ z = false) := by
+  cases x <;> cases y <;> cases z <;> norm_num [quadraticEnergy, bitRat]
+
+/-- Expectation of the exposing quadratic energy under a joint table. -/
+def energyExpectation (p : Joint3) : ℚ :=
+  p.p000 * quadraticEnergy false false false +
+    p.p001 * quadraticEnergy false false true +
+    p.p010 * quadraticEnergy false true false +
+    p.p011 * quadraticEnergy false true true +
+    p.p100 * quadraticEnergy true false false +
+    p.p101 * quadraticEnergy true false true +
+    p.p110 * quadraticEnergy true true false +
+    p.p111 * quadraticEnergy true true true
+
+/-- Since the energy is one exactly at `011` and `100` and zero elsewhere, its expectation
+is the total mass on the two forbidden states. -/
+theorem energyExpectation_eq_forbidden_mass (p : Joint3) :
+    energyExpectation p = p.p011 + p.p100 := by
+  norm_num [energyExpectation, quadraticEnergy, bitRat]
+
 theorem feasible_boundaryWitness : FeasiblePairwise boundaryWitness := by
   refine
     { nonneg000 := by norm_num [boundaryWitness]
@@ -100,6 +137,53 @@ theorem not_strictly_positive_of_feasible {p : Joint3} (hFeas : FeasiblePairwise
   have hlt : p.p111 < (7 / 20 : ℚ) := by
     linarith [hp011, hPos.pos011]
   linarith
+
+/-- The prescribed pairwise marginals determine the expectation of the exposing energy:
+`E[E] = E[X] - E[XY] - E[XZ] + E[YZ] = 1/2 - 9/20 - 2/5 + 7/20 = 0`. -/
+theorem energyExpectation_eq_zero_of_feasible
+    {p : Joint3} (hFeas : FeasiblePairwise p) :
+    energyExpectation p = 0 := by
+  rw [energyExpectation_eq_forbidden_mass]
+  have hp100 : p.p100 = p.p111 - (7 / 20 : ℚ) := by
+    linarith [hFeas.xy10, hFeas.xz11]
+  have hp011 : p.p011 = (7 / 20 : ℚ) - p.p111 := by
+    linarith [hFeas.yz11]
+  linarith
+
+/-- The pairwise expectations force the exposing quadratic energy to have expectation zero,
+so the total mass on the two positive-energy states `011` and `100` vanishes. -/
+theorem exposing_energy_expectation_eq_zero_of_feasible
+    {p : Joint3} (hFeas : FeasiblePairwise p) :
+    p.p011 + p.p100 = 0 := by
+  rw [← energyExpectation_eq_forbidden_mass]
+  exact energyExpectation_eq_zero_of_feasible hFeas
+
+/-- The ground-state certificate directly forces both excluded states to have zero mass. -/
+theorem forbidden_states_zero_of_feasible
+    {p : Joint3} (hFeas : FeasiblePairwise p) :
+    p.p011 = 0 ∧ p.p100 = 0 := by
+  have hsum := exposing_energy_expectation_eq_zero_of_feasible hFeas
+  constructor <;> linarith [hFeas.nonneg011, hFeas.nonneg100]
+
+/-- The prescribed pairwise marginals have a unique feasible global table. -/
+theorem feasible_eq_boundaryWitness
+    {p : Joint3} (hFeas : FeasiblePairwise p) :
+    p = boundaryWitness := by
+  rcases forbidden_states_zero_of_feasible hFeas with ⟨hp011, hp100⟩
+  have hp111 : p.p111 = (7 / 20 : ℚ) := by
+    linarith [hFeas.yz11]
+  have hp110 : p.p110 = (1 / 10 : ℚ) := by
+    linarith [hFeas.xy11]
+  have hp101 : p.p101 = (1 / 20 : ℚ) := by
+    linarith [hFeas.xz11]
+  have hp010 : p.p010 = (1 / 20 : ℚ) := by
+    linarith [hFeas.yz10]
+  have hp001 : p.p001 = (1 / 10 : ℚ) := by
+    linarith [hFeas.xz01]
+  have hp000 : p.p000 = (7 / 20 : ℚ) := by
+    linarith [hFeas.xy00]
+  rcases p with ⟨p000, p001, p010, p011, p100, p101, p110, p111⟩
+  simp_all [boundaryWitness]
 
 /-- Counterexample package: feasible pairwise marginals exist, but no interior feasible joint exists. -/
 theorem exists_feasible_but_no_interior :

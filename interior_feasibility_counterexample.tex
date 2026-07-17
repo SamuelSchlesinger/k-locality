@@ -70,10 +70,30 @@ which has zeros at \(011\) and \(100\).
 
 So \(\mathcal{F}_\Phi\neq\varnothing\), but no feasible \(P^\circ\) is strictly positive on \(T_\Phi\). Interior feasibility fails.
 
-\section*{Why this is a dead end}
+\section*{What this rules out}
 This shows that \emph{local positivity of marginals} does not guarantee a feasible distribution with full support on \(T_\Phi\). Global compatibility can force the feasible set onto a boundary face of the simplex, even when every locally checked tuple is allowed.
 
 So the route ``consistency \(+\) local positivity \(\Rightarrow\) maximal support'' is false in general, and the converse argument needs an extra hypothesis (or a stronger structural condition) beyond consistency.
+
+\section*{The ground-state repair}
+The example does not rule out a bounded-degree description of the global support.
+In fact, define the quadratic pseudo-Boolean energy
+\[
+E(x,y,z)=x-xy-xz+yz=(x-y)(x-z).
+\]
+On \(\{0,1\}^3\), this energy is \(1\) at exactly \(011\) and \(100\), and is
+\(0\) at the other six states.  Moreover, the prescribed pairwise marginals
+determine its expectation:
+\[
+\mathbb E[E(X,Y,Z)]
+=\mathbb E[X]-\mathbb E[XY]-\mathbb E[XZ]+\mathbb E[YZ]
+=\frac12-\frac9{20}-\frac25+\frac7{20}=0.
+\]
+Because \(E\ge0\) pointwise, every feasible joint must be supported on
+\(E^{-1}(0)\).  Thus the missing global information is a weighted sum of local
+statistics, not an intersection of individually positive local supports.  This
+is the face of the marginal polytope exposed by \(E\) and is the basis of the
+corrected converse in the main paper.
 
 \section*{Python code used}
 The script below (standard library only) computes the affine solution family and the feasible interval for \(t\) exactly over \(\mathbb{Q}\).

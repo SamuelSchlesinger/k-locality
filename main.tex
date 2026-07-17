@@ -2,182 +2,3475 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
+\usepackage[margin=1in]{geometry}
 \usepackage{biblatex}
+\usepackage{tikz}
+\usepackage{placeins}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usetikzlibrary{arrows.meta,positioning}
 
 \addbibresource{bibliography.bib}
 
 \newcommand{\LC}{\mathcal{L}}
+\newcommand{\supp}{\operatorname{supp}}
+\newcommand{\NSize}{\operatorname{NSize}}
+\newcommand{\ndeg}{\operatorname{ndeg}}
+\newcommand{\GSE}{\operatorname{GSE}}
+\newcommand{\fc}{\operatorname{fc}}
+\newcommand{\fcl}{\operatorname{fcl}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\bits}{\{0,1\}}
+
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 
 \newtheorem{definition}{Definition}
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma}
 \newtheorem{corollary}{Corollary}
+\newtheorem{proposition}{Proposition}
+\newtheorem{conjecture}{Conjecture}
 \newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
 
-\title{Localization Complexity: Core Definitions and Circuit Connections}
+\title{Localization Complexity of Hidden-Variable Gibbs Models}
 \author{Samuel Schlesinger, Joshua Grochow}
-\date{\today}
+\date{July 2026}
 
 \begin{document}
 
 \maketitle
 
 \begin{abstract}
-We define the $k$-localization complexity $\LC_k(D)$ of a distribution $D$ as the minimum number of latent variables needed to realize $D$ as the observed marginal of a $k$-local maximum-entropy model. We isolate one technical mechanism---\emph{local verification}---that converts bounded fan-in deterministic circuit computations into $k$-local models. This yields:
+We study the minimum number of binary latent variables needed to realize a
+distribution as the observed marginal of a bounded-order maximum-entropy model.
+The resulting $k$-localization complexity $\LC_k(D)$ is a hidden-variable
+extension complexity for the closure of the order-$k$ hierarchical
+exponential family.  For every fixed $k$, we determine its worst-case scale up
+to constants depending only on $k$:
 \[
-\LC_k(D) \leq G_{k-1}(D),\qquad
-\LC_k(D) \leq C_{k-1}(S) \text{ for flat } D.
+  \max_{D\text{ on }\{0,1\}^n}\LC_k(D)=\Theta_k(2^{n/k}).
 \]
-The paper is intentionally restricted to foundational definitions, the local-verification theorem, and these deterministic circuit upper bounds.
+The upper bound is an exposed block-feature graph preserving the complete
+probability table; the lower bound is a boundary-uniform marginal-variety
+obstruction.  This exponent is also nontrivial inside the exchangeable class:
+every exchangeable law has $\LC_k(D)=O_k(n^{1/k})$, whereas the fixed
+full-support law
+\[
+  D_n(x)\propto
+  \exp\!\left(-2^{|x|/2^{\lfloor\log_2(n+1)\rfloor}}\right)
+\]
+has $\LC_k(D_n)=\Theta_k(n^{1/k})$ and likelihood ratio below $e^3$.
+Thus a closed-form, uniformly conditioned law attains the worst exchangeable
+scale at fixed temperature.
+
+The marginal obstruction yields exact polynomial certificates and effective
+hard rational Gibbs rays.  A complementary theorem transfers arbitrary
+degree-reduction lower bounds to full-support laws:
+\[
+  \liminf_{t\downarrow0}\LC_k(D_{f,t})
+  \ge \operatorname{aux}_k(f).
+\]
+Its arbitrary-face proof uses closedness of a finite tropical image.  For
+dense rational tables of bit length $L$, facial stratification also gives
+exact recognition in time $L^{O_{k,c}(\log^kL)}$ when $\ell\le cn$, with a
+sharper exponent at fixed $\ell$ and full support; ordinary NP-hardness in this
+dense model would contradict ETH.
+
+Finally, support faces yield two-way comparisons with deterministic and
+nondeterministic circuits.  These are barrier theorems, not new circuit lower
+bounds: the unconditional structured separations above are carried by the
+weights of full-support laws.
 \end{abstract}
 
 \section{Introduction}
-Complexity measures for distributions ask how succinctly a computational model can represent a target distribution \cite{vi10}. We introduce and study one such measure based on local maximum-entropy structure.
 
-The purpose of this paper is narrow: define the model precisely and prove its direct connections to bounded fan-in circuit complexity. We do not pursue algorithmic hardness of computing $\LC_k$ from an explicit input representation here.
-% TODO(rebuild): Re-add a full "Preliminaries" section if/when we expand scope,
-% including entropy/exponential-family background and any required circuit conventions.
+Complexity measures for distributions ask how economically a computational or
+statistical model can represent a target law.  Generator complexity, for
+example, charges for a circuit that transforms uniform random bits into the
+target distribution \cite{vi10}.  Here the resource is different: we charge for
+the number of latent binary variables needed to make the lifted distribution a
+bounded-order maximum-entropy model.  Equivalently, we ask for the smallest
+Boolean extension on which both the support and the relative log weights of a
+table are described by interactions of order at most $k$.
 
-\paragraph{Contributions.}
+The boundary of the exponential family is essential.  A local model may have
+zeros even when none of its individual marginal cells vanishes.  The correct
+global object is the face of the $k$-marginal polytope containing the moment
+vector: an exposing functional is a nonnegative degree-$k$ energy whose ground
+space is exactly the support, while a second degree-$k$ potential controls all
+positive weights on that face.  This face--Gibbs description lets us treat
+hidden-variable representations uniformly across positive and boundary laws.
+
+Our central question is quantitative: how many hidden bits are necessary in
+the worst case, and can the obstruction be witnessed by a structured law
+rather than by dimension counting alone?  An exposed block-feature dictionary
+gives a full-weight lift with $O_k(2^{n/k})$ hidden bits.  A projective marginal
+variety, taken over every lifted support face, gives the matching generic lower
+bound and exact eliminants.  The same machinery, combined with facial
+conditioning and an Eisenstein--Lindemann argument, yields a closed-form
+exchangeable law whose probabilities remain within a universal constant ratio
+but whose localization complexity grows as $\Theta_k(n^{1/k})$.
+
+Circuit traces provide a useful contrast rather than the source of these
+separations.  Fan-in-two computations have quadratic ground-space encodings,
+and every exposed ground space compiles back into a nondeterministic support
+circuit.  Consequently, strong explicit lower bounds for flat supports meet a
+Boolean-circuit barrier.  Full-support laws avoid that barrier because their
+support recognizer is trivial and their complexity lies entirely in the
+weights.
+
+Our contributions are as follows.
 \begin{itemize}
-\item We define $k$-local distributions, $k$-localizations, and localization complexity $\LC_k(D)$.
-\item We prove a general local-verification theorem: if local constraints forbid every invalid global configuration, then the uniform distribution on valid traces is a maximum-entropy feasible point.
-\item Using this theorem, we prove upper bounds from two deterministic circuit measures: generator complexity and flat-support circuit complexity.
+  \item \emph{Worst-case and structured full-support bounds.}
+  We determine the worst-case and almost-everywhere scale as
+  $\Theta_k(2^{n/k})$.  The upper construction exposes a feature graph and
+  preserves the complete probability table, not merely an objective or its
+  minimizers.  The lower bound uses one projective marginal variety containing
+  the images of all lifted support faces.  Inside the exchangeable class we
+  prove the sharp scale $\Theta_k(n^{1/k})$ and exhibit a fixed-temperature,
+  uniformly conditioned closed-form family attaining it
+  (Theorems~\ref{thm:universal-lift} and~\ref{thm:generic-positive},
+  Corollary~\ref{cor:worst-case}, and
+  Theorem~\ref{thm:exchangeable-window}).
+  \item \emph{Certificates and transfer.}
+  The marginal ideal supplies exact hidden-bit lower-bound certificates and
+  computable hard rational Gibbs rays with effective cold intervals.  The
+  zero-temperature theorem imports any unrestricted
+  degree-$k$ auxiliary-variable lower bound into full-support localization.
+  Its proof works for arbitrary real energies uniformly across boundary faces.
+  It also yields noisy parity and optimal-scale closed-form rays
+  (Theorems~\ref{thm:algebraic-certificate} and~\ref{thm:zero-temperature},
+  Corollaries~\ref{cor:effective-tables}, \ref{cor:noisy-parity},
+  and~\ref{cor:superincreasing}).
+  \item \emph{Exact recognition.}
+  For dense exact rational tables, face enumeration gives deterministic
+  quasipolynomial recognition for every linear latent budget, with a sharper
+  exponent for fixed-budget full-support tables; the zero-latent case is in
+  polynomial time.  Under ETH, none of these dense restrictions is NP-hard
+  under polynomial-output reductions
+  (Theorems~\ref{thm:qp-recognition} and~\ref{thm:full-support-recognition},
+  Proposition~\ref{prop:zero-latent-p},
+  Corollary~\ref{cor:recognition-eth}).
+  \item \emph{The support contrast.}
+  Quadratic NAND synthesis maps circuit traces to localizations, while exposed
+  faces compile back into nondeterministic support circuits.  This gives a
+  static two-way simulation and a circuit barrier, not a new circuit lower
+  bound (Theorems~\ref{thm:nand-synthesis} and~\ref{thm:converse}); a
+  Razborov--Rudich argument makes the barrier precise
+  (Proposition~\ref{prop:natural-proofs}).  An appendix develops finer
+  support invariants, almost-all-supports bounds, exact parity localization,
+  and adjacent hierarchy separations (Appendix~\ref{app:support-invariants}).
 \end{itemize}
 
-\section{Model and Basic Definitions}
-Fix binary random variables $X_1,\dots,X_n$ and a distribution $D$ with mass function $\rho:\{0,1\}^n\to[0,1]$. Let
-\[
-S=\{x\in\{0,1\}^n:\rho(x)>0\}
-\]
-be the support.
+\paragraph{Complexity-theoretic status.}
+The paper does not prove a new lower bound for a standard circuit class.  Its
+circuit statements are simulations and barriers: they identify what a strong
+explicit flat-support localization bound would imply.  The unconditional
+structured lower bound is instead weight-sensitive, has full support, and uses
+transcendental probabilities despite its succinct closed form.  The dense
+rational recognition algorithms concern a separate explicit-table input
+model.  We keep these three regimes distinct throughout.
+
+\paragraph{Novelty boundary.}
+The face characterization is standard finite exponential-family geometry
+\cite{rauh11,malago11}; block dictionaries and objective quadratization are
+classical; marginal implicitization and invariant-based membership tests are
+standard algebraic statistics; and sum-to-min tropicalization is established.
+The claims here are the exact full-weight graph lift and matching localization
+exponent, the two-way static support formulation, the
+budget-indexed localization consequence of marginal ideals and its effective
+base-coded escaping ray, the closed-face tropical argument that turns
+marginalization into the stated auxiliary-complexity lower-bound transfer, and
+the fixed-temperature Eisenstein--Lindemann obstruction inside the
+exchangeable class, together with face-stratified quasipolynomial exact
+recognition.
+Table~\ref{tab:framework-comparison} summarizes these boundaries; detailed
+priority comparisons are repeated next to the corresponding theorems.
+
+\begin{table}[!ht]
+\centering
+\caption{Positioning relative to neighboring representation frameworks.  The
+last column identifies the additional budget or conclusion used here; it does
+not claim the underlying framework as new.}
+\label{tab:framework-comparison}
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\renewcommand{\arraystretch}{1.06}
+\begin{tabularx}{\textwidth}{
+  @{}
+  P{0.178\textwidth}
+  P{0.137\textwidth}
+  P{0.115\textwidth}
+  P{0.180\textwidth}
+  Y
+  @{}
+}
+\toprule
+Framework
+& Architecture or resource
+& Regime or boundary
+& Object preserved or decided
+& Relation to localization complexity
+\\
+\midrule
+
+Hierarchical exponential families and marginal-polytope faces
+\cite{rauh11,malago11,kahle10}
+&
+Fixed interaction complex; no latent-bit budget
+&
+Positive family and topological closure
+&
+Log weights and exposed boundary supports
+&
+Face--Gibbs geometry is inherited; $\LC_k$ minimizes the number of hidden
+bits over such lifts.
+\\\addlinespace[2pt]
+
+Pseudo-Boolean quadratization
+\cite{anthony17,anthony16,bcrh20}
+&
+Auxiliary bits in $f(x)=\min_h g(x,h)$
+&
+Min-plus or ground-state regime
+&
+All objective values under minimization
+&
+The graph lift preserves a complete probability table; arbitrary
+quadratization lower bounds transfer only through the zero-temperature
+theorem.
+\\\addlinespace[2pt]
+
+General and restricted Boltzmann machines
+\cite{moserkameda92,montufaray11,montufarrauh17}
+&
+General pairwise network versus bipartite RBM
+&
+Usually positive or approximate; closure admits zeros
+&
+Visible-law expressivity and hidden-unit counts; sometimes stored-pattern sets
+&
+For $k=2$, $\LC_2$ is closure complexity for the general Boltzmann machine,
+not RBM complexity; our exponent is full-weight and face-uniform.
+\\\addlinespace[2pt]
+
+Marginal varieties and graphical-model membership
+\cite{geiger06,cuetomortonsturmfels10,critch13,seigalmontufar18}
+&
+Latent polynomial parameter maps
+&
+Projective or Zariski closure
+&
+Dimension, defining equations, and membership
+&
+Standard implicitization becomes a hidden-budget certificate; facial
+stratification yields exact dense-table recognition.
+\\\addlinespace[2pt]
+
+Tropical statistical inference
+\cite{pachtersturmfels04,cuetomortonsturmfels10,montufarmorton17}
+&
+Valuations of marginal parameterizations
+&
+Large-parameter or zero-temperature limit
+&
+Inference functions and tropical images
+&
+Closedness across arbitrary support faces yields the stated auxiliary-bit
+lower-bound transfer.
+\\\addlinespace[2pt]
+
+Clocked Boltzmann computation and conventional circuits
+\cite{parberryschnitger89}
+&
+Dynamical network with an update schedule
+&
+Time evolution, not static Gibbs closure
+&
+Input--output computation
+&
+Our bridge is static: NAND-trace ground spaces versus existential support
+recognition.  It is a circuit barrier, not a new circuit lower bound.
+\\
+
+\bottomrule
+\end{tabularx}
+\end{table}
+\FloatBarrier
+
+\paragraph{Organization.}
+Section~\ref{sec:locality} defines marginal models, $k$-locality, and
+$\LC_k$, and proves universal existence.  Section~\ref{sec:polytopes} develops
+the face--Gibbs geometry that the rest of the paper uses.
+Section~\ref{sec:universal-lifts} proves the universal block-feature upper
+bound.  Section~\ref{sec:algebraic-certificates} turns the dimension
+obstruction into computable certificates with explicit degrees and effective
+hard tables.  Sections~\ref{sec:full-support} and~\ref{sec:zero-temperature}
+contain the weight-sensitive core: the generic $\Theta_k(2^{n/k})$ scale, the
+interior-versus-closure conjecture, the zero-temperature transfer, and the
+exchangeable family.  Section~\ref{sec:recognition} gives the dense-table
+recognition algorithms and the ETH barrier.
+Section~\ref{sec:circuit-support} proves the two-way circuit bridge and the
+natural-proofs barrier for the support program.
+Section~\ref{sec:related} locates the measure among neighboring frameworks,
+and Section~\ref{sec:directions} collects open problems.  The appendices
+contain the finer support-invariant theory
+(Appendix~\ref{app:support-invariants}), further separations and consequences
+(Appendices~\ref{app:full-support-hierarchy}
+and~\ref{app:transfer-consequences}), and deferred technical proofs
+(Appendices~\ref{app:etr-encoding}--\ref{app:superincreasing-details}).
+
+\section{Locality and localization}\label{sec:locality}
+
+Throughout, $n\ge1$.  Fix a distribution $D$ on $\bits^n$, with mass function
+$\rho$, and write $S=\supp(D)=\{x:\rho(x)>0\}$.  For every nonempty finite set
+$T$, let $U_T$ denote the uniform distribution on $T$.  We identify every
+function on a Boolean cube with its unique canonical multilinear
+representative, obtained modulo the relations $x_i^2=x_i$; polynomial degree
+always refers to this representative.
 
 \begin{definition}[Marginal model]
-A distribution $D'$ over variables $X_1,\dots,X_n,H_1,\dots,H_m$ is a marginal model of $D$ if
+A distribution $Q$ on $(X,H)\in\bits^n\times\bits^\ell$ is a marginal model of
+$D$ if
 \[
-\forall x\in\{0,1\}^n,\qquad
-\sum_{h\in\{0,1\}^m}\Pr_{D'}(X=x,H=h)=\rho(x).
+  \sum_{h\in\bits^\ell}Q(x,h)=\rho(x)
+  \quad\text{for every }x\in\bits^n.
 \]
 \end{definition}
 
 \begin{definition}[$k$-local distribution]
-A distribution $Q$ over $N$ binary variables is \emph{$k$-local} if there exists a finite family of subsets $S_1,\dots,S_t\subseteq[N]$ with $|S_i|\le k$ and target marginals $\phi_i:\{0,1\}^{S_i}\to[0,1]$ such that:
-\begin{itemize}
-\item $Q$ matches every constraint $\phi_i$ on $S_i$, and
-\item among all distributions matching these constraints, $Q$ has maximum Shannon entropy.
-\end{itemize}
+A distribution $Q$ on $\bits^N$ is $k$-local if there is a finite collection of
+scopes $A_i\subseteq[N]$, $|A_i|\le k$, such that $Q$ maximizes Shannon entropy
+among all distributions having the same $A_i$-marginals as $Q$.
 \end{definition}
 
+Entropy is strictly concave, so the maximizer in this definition is unique.
+The constraints may be taken to be entries of marginal tables or,
+equivalently for binary variables, expectations of multilinear monomials.
+
 \begin{definition}[$k$-localization complexity]
-A marginal model $D'$ of $D$ is a \emph{$k$-localization} of $D$ if $D'$ is $k$-local. For $k\ge2$,
+A $k$-local marginal model of $D$ is a $k$-localization of $D$.  For $k\ge2$,
 \[
-\LC_k(D)=\min\{m:\text{$D$ has a $k$-localization with $m$ latent variables}\}.
+  \LC_k(D)=\min\{\ell:D\text{ has a $k$-localization with $\ell$ latent bits}\}.
 \]
 \end{definition}
 
-\begin{lemma}[Monotonicity]
-If $k_1\ge k_2$, then $\LC_{k_1}(D)\le \LC_{k_2}(D)$.
+\paragraph{Resource convention.}
+For $k=2$, this is hidden-unit complexity in the topological closure of the
+general binary Boltzmann-machine model: quadratic energies allow arbitrary
+biases and all visible--visible, visible--hidden, and hidden--hidden couplings.
+It is therefore not restricted-Boltzmann-machine complexity.  More generally,
+this is a nonuniform extension-dimension measure: it charges latent bits, not
+the number or bit precision of interaction coefficients, and it permits
+arbitrary real parameters and boundary limits.  This convention makes the
+comparison with exact finite-description circuits intentionally asymmetric;
+for example, a uniform-seed exact generator does not exist for a nondyadic
+law.  The rational certificates below show that large localization complexity
+is not confined to transcendental tables, but coefficient-bounded and
+approximate versions are distinct measures and remain open.
+
+\begin{proposition}[Universal existence]\label{prop:existence}
+Every distribution $D$ has a $2$-localization with at most $|S|$ latent bits.
+Consequently $\LC_k(D)$ is finite for every $k\ge2$ and
+\[
+  \LC_k(D)\le \LC_2(D)\le |S|.
+\]
+\end{proposition}
+
+\begin{proof}
+Introduce one bit $H_x$ for each $x\in S$.  Let $Q$ put mass $\rho(x)$ on the
+single lifted state in which $X=x$, $H_x=1$, and $H_{x'}=0$ for $x'\ne x$.
+Constrain every pair marginal $(H_x,X_i)$ to equal its marginal under $Q$.
+
+Any feasible distribution $R$ has $\Pr_R(H_x=1)=\rho(x)$, and $H_x=1$ forces
+$X=x$.  The events $\{H_x=1\}$ are pairwise disjoint: two distinct support
+points differ in some visible coordinate, which the corresponding active bits
+would force to both values.  Their probabilities sum to one, so exactly one is
+active almost surely.  It follows that $R=Q$.  Thus $Q$ is the unique feasible
+distribution and hence the maximum-entropy feasible distribution.  Monotonicity
+in $k$ is immediate.
+\end{proof}
+
+This construction is deliberately crude.  The measure is interesting when
+structure in $D$ permits far fewer latent bits.
+
+\section{Marginal polytopes and ground states}\label{sec:polytopes}
+
+For $A\subseteq[N]$, let $y_A=\prod_{i\in A}y_i$, with $y_\varnothing=1$.
+Define the order-$k$ feature map
+\[
+  \chi_k:\bits^N\longrightarrow\bits^{d_k(N)},
+  \qquad
+  \chi_k(y)=(y_A)_{A\subseteq[N],\ |A|\le k},
+  \qquad
+  d_k(N)=\sum_{j=0}^k\binom Nj,
+\]
+and the $k$-marginal polytope
+\[
+  P_k(N)=\operatorname{conv}\{\chi_k(y):y\in\bits^N\}.
+\]
+The vector $\E_Q[\chi_k]$ is equivalent to the full collection of marginals on
+at most $k$ variables.  One direction is immediate from
+$\E[Y_A]=\Pr(Y_i=1\text{ for all }i\in A)$; the other follows by expanding
+products of $Y_i$ and $1-Y_i$.
+
+\begin{lemma}[Canonical constraints]\label{lem:canonical}
+A distribution $Q$ is $k$-local if and only if it maximizes entropy among all
+distributions $R$ satisfying
+\[
+  \E_R[\chi_k]=\E_Q[\chi_k].
+\]
 \end{lemma}
 
 \begin{proof}
-Any constraint on at most $k_2$ variables is also a constraint on at most $k_1$ variables.
+The reverse implication is the definition, using all scopes of size at most
+$k$.  For the forward implication, every distribution matching all
+order-at-most-$k$ marginals also matches the particular witnessing marginals.
+Adding these constraints preserves the maximality of $Q$.
 \end{proof}
 
-\section{A Local Verification Theorem}
-The following lemma is the core mechanism used in all circuit reductions.
+We use one elementary support fact about entropy.
+
+\begin{lemma}[Maximal feasible support]\label{lem:max-support}
+Let $\mathcal F$ be a nonempty convex subset of a finite probability simplex,
+defined by affine equalities.  If $Q$ maximizes entropy on $\mathcal F$, then
+\[
+  \supp(Q)=\bigcup_{R\in\mathcal F}\supp(R).
+\]
+\end{lemma}
+
+\begin{proof}
+The inclusion from left to right is trivial.  If $R(y)>0$ but $Q(y)=0$, then
+$Q_\varepsilon=(1-\varepsilon)Q+\varepsilon R$ is feasible.  The new coordinate
+contributes $-\varepsilon R(y)\log(\varepsilon R(y))$ to entropy, whereas the
+total first-order change from coordinates already in $\supp(Q)$ is $O(\varepsilon)$.
+For sufficiently small positive $\varepsilon$, the $-\varepsilon\log\varepsilon$
+term dominates and $H(Q_\varepsilon)>H(Q)$, a contradiction.
+\end{proof}
+
+\begin{theorem}[Face--Gibbs characterization]\label{thm:face-gibbs}
+For a distribution $Q$ on $\bits^N$, the following are equivalent.
+\begin{enumerate}
+  \item $Q$ is $k$-local.
+  \item There are a face $F$ of $P_k(N)$ and a vector
+  $\theta\in\mathbb R^{d_k(N)}$ such that, with
+  $T=\chi_k^{-1}(F)$,
+  \[
+    \supp(Q)=T,
+    \qquad
+    Q(y)=\frac{\exp(\langle\theta,\chi_k(y)\rangle)}
+    {\sum_{z\in T}\exp(\langle\theta,\chi_k(z)\rangle)}
+    \quad (y\in T).
+  \]
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Assume first that $Q$ is $k$-local and put
+$b=\E_Q[\chi_k]\in P_k(N)$.  Let $F$ be the unique minimal face of $P_k(N)$
+containing $b$; then $b$ lies in the relative interior of $F$.  A convex
+representation of $b$ can use only feature vectors in $F$.  Conversely, for
+every $v=\chi_k(y)\in F$, relative interiority lets us write
+$b=\varepsilon v+(1-\varepsilon)b'$ for some $\varepsilon>0$ and $b'\in F$,
+so $y$ occurs with positive mass in some distribution having moment vector
+$b$.  Lemmas~\ref{lem:canonical} and \ref{lem:max-support} therefore give
+\[
+  \supp(Q)=\{y:\chi_k(y)\in F\}.
+\]
+
+On this support $Q$ is strictly positive.  Let $A_T$ be the matrix whose
+columns are the feature vectors $\chi_k(y)$ for $y\in T$.  A feasible tangent
+direction is any $u\in\ker A_T$; the constant feature already enforces
+$\sum_y u_y=0$.  First-order optimality of entropy at the interior point
+$Q|_T$ gives
+\[
+  \langle -1-\log Q,u\rangle=0
+  \qquad(u\in\ker A_T).
+\]
+Hence $\log Q$ lies in the row space of $A_T$, with the constant feature
+absorbing the affine term.  This is exactly the displayed Gibbs form.
+
+Conversely, suppose $Q$ has the displayed form.  Choose an affine functional
+$a$ exposing $F$, oriented so that
+\[
+  E(y):=a(\chi_k(y))\ge0,
+  \qquad E(y)=0\Longleftrightarrow y\in T.
+\]
+If $R$ has the same order-$k$ moments as $Q$, then
+$\E_R[E]=\E_Q[E]=0$.  Hence $R$ is supported on $T$.  Moreover
+$\E_R[\log Q]=\E_Q[\log Q]$, since $\log Q$ is linear in $\chi_k$ on $T$.
+Evaluating relative entropy on the common support $T$, nonnegativity of
+$D_{\mathrm{KL}}(R\|Q)$ gives
+\[
+  0\le D_{\mathrm{KL}}(R\|Q)
+  =-H(R)-\E_R[\log Q]
+  =-H(R)+H(Q).
+\]
+Thus $Q$ is the maximum-entropy distribution with its order-$k$ moments, and
+Lemma~\ref{lem:canonical} makes it $k$-local.
+\end{proof}
+
+This theorem is a specialization of the description of the closure of a finite
+exponential family by faces of its marginal polytope
+\cite{rauh11,malago11}.  We record the form needed below.
+
+\begin{corollary}[Ground-state support]\label{cor:ground-state}
+If $Q$ is $k$-local, there is a multilinear polynomial
+\[
+  E(y)=\sum_{A\subseteq[N],\ |A|\le k}a_A y_A
+\]
+such that $E(y)\ge0$ on $\bits^N$ and
+\[
+  \supp(Q)=\{y:E(y)=0\}.
+\]
+\end{corollary}
+
+\begin{proof}
+Use an affine functional exposing the face in
+Theorem~\ref{thm:face-gibbs} and compose it with $\chi_k$.
+\end{proof}
+
+\subsection{A boundary caution}
+
+Consider three bits $X,Y,Z$ with pairwise marginals
+\[
+\Pr(X,Y)=\frac1{20}\begin{pmatrix}9&1\\1&9\end{pmatrix},\quad
+\Pr(X,Z)=\frac1{10}\begin{pmatrix}4&1\\1&4\end{pmatrix},\quad
+\Pr(Y,Z)=\frac1{20}\begin{pmatrix}7&3\\3&7\end{pmatrix}.
+\]
+Every local cell is positive, but the feasible joint displayed below gives
+zero mass to $011$ and $100$.  This refutes the claim that local positivity
+implies a strictly positive feasible joint.
+
+For completeness, in lexicographic order $000,001,\ldots,111$, the joint
+probability vector is
+\[
+  \frac1{20}(7,2,1,0,0,1,2,7).
+\]
+Direct summation gives the three displayed marginals.  Uniqueness is not needed
+for the obstruction below.
+
+The corrected certificate is already quadratic:
+\[
+  E(x,y,z)=x-xy-xz+yz=(x-y)(x-z).
+\]
+On the Boolean cube, $E$ equals one at $011$ and $100$ and zero elsewhere.
+The prescribed marginals imply
+\[
+  \E[E(X,Y,Z)]
+  =\frac12-\frac9{20}-\frac25+\frac7{20}=0.
+\]
+Since $E\ge0$, every feasible joint is supported on $E^{-1}(0)$.  Thus no
+single marginal entry rules out either state; a weighted sum of pairwise
+statistics exposes the global support face.
+
+\section{Universal feature lifts}\label{sec:universal-lifts}
+
+Universal sets for quadratization show that every pseudo-Boolean objective can
+be reduced to degree two with $O(2^{n/2})$ auxiliary variables
+\cite{anthony17}.  A related feature construction gives an exact
+distributional lift and extends to every target locality $k$.
+
+At the sparse extreme, neighborliness of marginal polytopes already eliminates
+the need for hidden variables.
+
+\begin{proposition}[Sparse distributions need no lift]
+\label{prop:sparse-no-lift}
+If $D$ is a distribution on $\bits^n$ and
+$|\supp(D)|\le2^k-1$, then $\LC_k(D)=0$.
+\end{proposition}
+
+\begin{proof}
+When $k\ge n$, the full joint marginal uniquely determines $D$.  When $k<n$,
+the smallest non-face of the complete order-$k$ interaction complex has size
+$k+1$.  Kahle's neighborliness theorem says that every distribution supported
+on fewer than $2^k$ atoms belongs to the closure of this hierarchical model
+\cite[Theorem~14]{kahle10}.  By Theorem~\ref{thm:face-gibbs}, this closure is
+exactly the set of $k$-local distributions.
+\end{proof}
+
+Let $n=qk+r$, where $0\le r<k$, and define
+\[
+  b_k(n)
+  =r2^{q+1}+(k-r)2^q-n-k.
+\]
+Equivalently, partition $[n]$ into $k$ blocks $V_1,\ldots,V_k$ whose sizes
+differ by at most one, allowing empty blocks when $k>n$; then
+\[
+  b_k(n)=\sum_{j=1}^k\bigl(2^{|V_j|}-|V_j|-1\bigr),
+\]
+the number of within-block subsets of size at least two.
+
+\begin{theorem}[Universal block-feature lift]
+\label{thm:universal-lift}
+For every distribution $D$ on $\bits^n$ and every $k\ge2$,
+\[
+  \LC_k(D)\le \min\{|\supp(D)|,b_k(n)\}.
+\]
+In particular, for fixed $k$ every distribution has
+\[
+  \LC_k(D)=O_k(2^{n/k}).
+\]
+\end{theorem}
+
+\begin{proof}
+The support-size bound is Proposition~\ref{prop:existence}.  We prove the
+block-feature bound.  If $k\ge n$, every distribution is already $k$-local
+and $b_k(n)=0$, so assume $2\le k<n$.
+
+\emph{Step 1: expose the block-feature graph.}
+For every $A\subseteq V_j$ with $|A|\ge2$, introduce a latent bit $h_A$ intended
+to equal $x_A=\prod_{i\in A}x_i$.  Write $z_A=h_A$ for such a set,
+$z_{\{i\}}=x_i$, and $z_\varnothing=1$.  For each nonsingleton $A$, choose
+$i_A\in A$ and, in increasing order of $|A|$, impose
+\[
+  h_A=z_{A\setminus\{i_A\}}x_{i_A}.
+\]
+The quadratic Rosenberg penalty
+\cite{rosenberg75}\cite[Observation~1]{boroshammer02}
+\[
+  R(a,b,c)=ab-2ac-2bc+3c
+\]
+is nonnegative on $\bits^3$ and vanishes exactly when $c=ab$.  Hence the sum
+$P(x,h)$ of these penalties is nonnegative and has zero set exactly the graph
+\[
+  \Gamma=\{(x,h):h_A=x_A\text{ for every introduced }A\}.
+\]
+This follows inductively in increasing order of $|A|$.
+
+\emph{Step 2: reduce visible degree on the graph.}
+Now let $f:\bits^n\to\mathbb R$ be arbitrary and write its multilinear
+expansion as $f(x)=\sum_{S\subseteq[n]}c_S x_S$.  On $\Gamma$,
+\[
+  x_S=\prod_{j:S\cap V_j\ne\varnothing}z_{S\cap V_j}.
+\]
+The product has one factor for each nonempty block intersection and therefore
+at most $k$ factors.  Replacing every $x_S$ by the expression on the right
+gives a polynomial $\widetilde f(x,h)$ of degree at most $k$ whose restriction
+to $\Gamma$ is $f$.
+
+\emph{Step 3: expose the lifted support.}
+Let $S=\supp(D)$.  Apply this construction first to the Boolean function
+$u(x)=1_{\bits^n\setminus S}(x)$.  Since $P$ is positive off $\Gamma$, choose
+\[
+  M>\max_{(x,h)\notin\Gamma}
+  \max\left\{0,\frac{-\widetilde u(x,h)}{P(x,h)}\right\}.
+\]
+Then
+\[
+  E(x,h)=\widetilde u(x,h)+M P(x,h)
+\]
+is nonnegative everywhere and strictly positive off $\Gamma$.  On $\Gamma$
+it equals $u(x)$, so its zero set is precisely
+\[
+  T=\{(x,h)\in\Gamma:x\in S\}.
+\]
+The energy $E$ has degree at most $k$.
+
+\emph{Step 4: lift the weights.}
+Finally extend $x\mapsto\log D(x)$ arbitrarily from $S$ to the full visible
+cube and call the resulting function $f$.  Define $Q$ on the lifted cube by
+placing mass $D(x)$ at the unique point of $T$ above $x$ and zero elsewhere.
+On $T$ its log-density is the restriction of the degree-at-most-$k$ polynomial
+$\widetilde f$.  Its support is the zero set of the nonnegative
+degree-at-most-$k$ energy $E$.  Because $E$ is an affine functional of
+$\chi_k(x,h)$, its nonnegative zero set is the inverse image of the face it
+exposes.  Theorem~\ref{thm:face-gibbs} therefore makes $Q$ $k$-local, and its
+visible marginal is $D$.  The number of latent bits is $b_k(n)$.
+\end{proof}
+
+Figure~\ref{fig:block-feature-lift} summarizes the two ingredients of the
+construction: a uniquely exposed feature graph and degree-$k$ representations
+of both support and weight data.
+\FloatBarrier
+\begin{figure}[!ht]
+\centering
+\begin{tikzpicture}[
+  scale=0.93,
+  transform shape,
+  >={Latex[length=2mm]},
+  node distance=10mm and 12mm,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=5pt,
+              minimum height=13mm, text width=34mm, fill=blue!4,
+              line width=.5pt}
+]
+  \node[box] (partition)
+    {balanced partition\\$[n]=V_1\sqcup\cdots\sqcup V_k$};
+  \node[box, text width=40mm, right=of partition] (graph)
+    {feature graph $\Gamma$\\
+     $h_A=x_A$ for $A\subseteq V_j$, $|A|\ge2$};
+  \node[box, right=of graph] (factor)
+    {one feature per block\\
+     $x_S=\prod_j z_{S\cap V_j}$};
+  \node[box, fill=green!5, text width=40mm, below=of graph] (potentials)
+    {degree-$k$ support/weight\\
+     $E=\widetilde u+MP$, $f|_S=\log D\leadsto\widetilde f$};
+  \node[box, fill=green!5, right=of potentials] (lift)
+    {$k$-local lifted law $Q$ on $\Gamma$\\
+     $\operatorname{marg}_X Q=D$};
+  \draw[->] (partition) -- (graph);
+  \draw[->] (graph) -- (factor);
+  \draw[->] (graph) -- (potentials);
+  \draw[->] (factor) -- (potentials);
+  \draw[->] (potentials) -- (lift);
+\end{tikzpicture}
+\caption{The universal block-feature lift.  Rosenberg penalties expose the
+feature graph with one lifted state above each visible state.  Every visible
+monomial then uses at most one feature from each block, so both the support
+indicator and the log-weights become degree at most $k$ without losing the
+target distribution.  Here $f$ is extended off $S$ before lifting, and
+$\widetilde f|_\Gamma=f\circ\pi_X$.}
+\label{fig:block-feature-lift}
+\end{figure}
+\FloatBarrier
+
+The balanced block dictionary is the classical $k$-generator of the Boolean
+lattice: every subset is the disjoint union of at most one member from each
+block's power set.  Its full generator size is $b_k(n)+n$, because the visible
+singletons are not charged as latent features.  Ellis proves the lower bound
+$k2^{n/k}(1-o(1))$ for fixed $k$ \cite[Theorem~5]{ellis09}.  This matches the
+balanced generator asymptotically when $k$ divides $n$; for other residue
+classes the balanced constant is larger by
+$(1+r/k)2^{-r/k}$, a factor at most about $1.061$, and exact optimality remains
+open.  For $k=2$, this is the $2$-basis adapted by
+Anthony, Boros, Crama, and Gruber for their universal quadratization bound
+\cite[Theorems~4--5 and Remark~2]{anthony17}.  Their matching generic lower
+bound for quadratization uses a related finite-union dimension argument
+\cite[Theorem~1]{anthony17}.  Their stated upper-bound count includes singleton
+features; here those are the original visible variables, saving $n$ latent
+bits.  The proof above also uses more than preservation of an objective's
+minimum: it exposes the graph of the feature map and lifts the entire
+probability table.  This is why both support and relative Gibbs weights are
+preserved.  The balanced dictionary and its objective-reduction use are
+classical; the claimed step here is an exact probability-table strengthening
+of that universal-feature construction, obtained by exposing its graph.  The
+architecture allows hidden--hidden interactions and boundary joint
+distributions, so its $O(2^{n/2})$ quadratic count does not contradict larger
+universality bounds for restricted Boltzmann machines
+\cite{montufaray11,montufarmorton15drbm}.
+
+\section{Algebraic lower-bound certificates}
+\label{sec:algebraic-certificates}
+
+The dimension obstruction can be upgraded from a generic statement to an
+exact certificate.  Put $N=n+\ell$.  In projective coordinates
+$[p_x]_{x\in\bits^n}$, let $\mathcal V_{n,k,\ell}$ be the Zariski closure of
+the parameterized set
+\[
+  p_x
+  =\sum_{h\in\bits^\ell}
+    \prod_{\substack{\varnothing\ne A\subseteq[N]\\|A|\le k}}
+      t_A^{\prod_{i\in A}(x,h)_i}.
+\]
+The parameters and closure here are complex; positive real parameters recover
+the visible marginals of positive order-$k$ Gibbs models.  This is the standard
+toric parameterization of a discrete graphical model followed by a linear
+marginal map \cite{geiger06}.
+
+\begin{theorem}[Marginal-ideal certificate]
+\label{thm:algebraic-certificate}
+If $\LC_k(D)\le\ell$, then $[D]\in\mathcal V_{n,k,\ell}$.  Consequently, if a
+homogeneous polynomial $F$ in the vanishing ideal
+$I(\mathcal V_{n,k,\ell})$ satisfies $F(D)\ne0$, then
+\[
+  \LC_k(D)>\ell.
+\]
+The ideal is computable by eliminating the parameters $t_A$ from the displayed
+map.  Moreover,
+\[
+  \dim\mathcal V_{n,k,\ell}\le d_k(n+\ell)-1.
+\]
+Thus whenever $d_k(n+\ell)<2^n$, the ideal contains a nonzero homogeneous
+polynomial with integer coefficients.
+\end{theorem}
+
+\begin{proof}
+A positive $k$-local joint law has, up to normalization, exactly the monomial
+parameterization inside the sum.  Every boundary $k$-local law is a limit of
+positive ones: if $E\ge0$ exposes its facial support $T$ and $\theta$ is its
+face--Gibbs potential, then
+\[
+  Q_\lambda(y)\ \propto\
+  \exp\!\bigl(\langle\theta,\chi_k(y)\rangle-\lambda E(y)\bigr)
+\]
+has full support and converges to the boundary law as $\lambda\to\infty$.
+If a localization uses $m<\ell$ bits, pad it with
+$\ell-m$ bits fixed to zero: adding the unary energy equal to the sum of the
+new bits exposes this padded face, so the law remains $k$-local.  Thus
+marginalization and closure place its visible probability vector in
+$\mathcal V_{n,k,\ell}$.  This proves the certificate implication.
+
+Writing the displayed coordinate polynomial as $q_x(\mathbf t)$, introduce a
+scale variable $s$ and form, over $\mathbb Q$, the elimination ideal
+\[
+  \big\langle p_x-sq_x(\mathbf t):x\in\bits^n\big\rangle
+  \cap\mathbb Q[p_x:x\in\bits^n].
+\]
+Gr\"obner elimination computes this homogeneous ideal, and clearing
+denominators gives integer coefficients.  No saturation by
+$\prod_A t_A$ is needed: the complex parameter torus is Zariski dense in its
+affine closure, a polynomial map sends the closure of a dense set into the
+closure of its image, and the scale variable forms the affine cone over the
+projective image.  The parameter torus
+has at most $d_k(N)-1$ nonconstant coordinates, which proves the dimension
+bound.  A proper projective variety defined over $\mathbb Z$ has a nonzero
+homogeneous integer polynomial in its ideal.
+\end{proof}
+
+The certificate degree can be made explicit without computing the elimination
+ideal.
+
+\begin{proposition}[Explicit certificate degree]\label{prop:certificate-degree}
+Put $d=d_k(n+\ell)$ and let $\Delta\ge1$ satisfy
+\[
+  \binom{\Delta+2^n-1}{2^n-1}>\binom{\Delta(d-1)+d-1}{d-1}.
+\]
+Then $I(\mathcal V_{n,k,\ell})$ contains a nonzero homogeneous integer
+polynomial of degree $\Delta$, computable by exact rational linear algebra in
+the $\binom{\Delta+2^n-1}{2^n-1}$ coefficients of a general degree-$\Delta$
+form.  In particular, if $d_k(n+\ell)\le2^{n-1}$, then $\Delta=2^{2n+2}$
+suffices.
+\end{proposition}
+
+\begin{proof}
+Each parameterized coordinate
+$q_x(\mathbf t)=\sum_h\prod_{A:(x,h)_A=1}t_A$ is a polynomial of degree at
+most $d-1$ in the $d-1$ parameters, so substitution
+$F\mapsto F((q_x)_x)$ is a linear map from degree-$\Delta$ forms in the $2^n$
+coordinates to polynomials of degree at most $\Delta(d-1)$ in $d-1$
+variables.  The displayed inequality makes the source dimension exceed the
+target dimension, so the kernel contains a nonzero rational point; clearing
+denominators gives an integer form $F$ with $F\circ q\equiv0$.  Such an $F$
+vanishes on every parameterized point, hence on the projective closure
+$\mathcal V_{n,k,\ell}$.
+
+For the last claim put $m=2^n-1$, $r=d-1$, and $\Delta=2^{2n+2}$; then
+$r\le2^{n-1}-1$ gives $m\ge2r$, and
+\[
+  \binom{\Delta+m}{m}\ge\left(\frac{\Delta+m}{m}\right)^{m}
+  \ge\left(\left(\frac{\Delta}{m}\right)^{2}\right)^{r},
+  \qquad
+  \binom{\Delta r+r}{r}\le\bigl(e(\Delta+1)\bigr)^{r},
+\]
+while
+$(\Delta/m)^2>(\Delta/2^n)^2=2^{2n+4}=4\cdot2^{2n+2}>e(\Delta+1)$.
+\end{proof}
+
+\begin{remark}[Cost of the certificate]\label{rem:certificate-cost}
+Gr\"obner elimination computes the entire elimination ideal, but its
+worst-case degrees are doubly exponential in general \cite{mayrmeyer82}.
+Proposition~\ref{prop:certificate-degree} instead isolates one certificate:
+below the halved dimension threshold its degree is singly exponential in $n$,
+although the ambient linear algebra still has doubly exponential size, and
+Hadamard bounds on a kernel minor bound the certificate's coefficient bit
+length by the same order.
+\end{remark}
+
+\begin{example}[The first marginal-ideal certificate]
+For $(n,k,\ell)=(3,2,0)$, eliminating the pairwise Gibbs parameters gives the
+familiar no-three-factor-interaction binomial
+\[
+  F(p)=p_{111}p_{100}p_{010}p_{001}
+       -p_{110}p_{101}p_{011}p_{000}.
+\]
+Let $D$ be the rational full-support table obtained by assigning unnormalized
+weight $2$ to $111$ and weight $1$ to every other string.  Then
+$F(D)=9^{-4}\ne0$, so Theorem~\ref{thm:algebraic-certificate} certifies
+$\LC_2(D)>0$.  This small equation is standard toric implicitization; its role
+here is to illustrate exactly how an eliminant is evaluated as a localization
+certificate.  For latent models the same algorithm remains exact, although
+the degrees and the elimination cost can grow rapidly.
+\end{example}
+
+\begin{corollary}[Effective rational hard tables and Gibbs rays]
+\label{cor:effective-tables}
+If $d_k(n+\ell)<2^n$, one can effectively construct an integer-valued function
+$f:\bits^n\to\mathbb Z_{\ge0}$ and a rational number $\tau>0$ such that
+\[
+  \LC_k(D_{f,t})>\ell
+  \qquad\text{for every real }0<t<\tau.
+\]
+In particular, every rational $t$ in this interval gives a rational
+full-support hard table.  Consequently, for every fixed $k$ there is a
+computable family of integer energies $(f_n)$, with computable rational cold
+thresholds, satisfying
+\[
+  \LC_k(D_{f_n,t})=\Omega_k(2^{n/k})
+  \qquad(0<t<\tau_n).
+\]
+Together with Theorem~\ref{thm:universal-lift}, this matches the worst-case
+scale up to constants depending only on $k$.
+\end{corollary}
+
+\begin{proof}[Proof roadmap]
+Use Theorem~\ref{thm:algebraic-certificate} to compute a nonzero homogeneous
+eliminant $F$.  Under a base-coded substitution, distinct monomials of $F$
+acquire distinct exponents, so the resulting univariate polynomial is
+nonzero.  Factoring out its smallest power of $t$ and bounding the remaining
+integer coefficients gives an explicit rational interval on which it cannot
+vanish.
+Appendix~\ref{app:effective-certificates} gives the construction and the
+asymptotic parameter choice; Proposition~\ref{prop:certificate-degree} bounds
+the degree of $F$, and hence every constant, explicitly in the regime
+$d_k(n+\ell)\le2^{n-1}$.
+\end{proof}
+
+The invariant is the classical marginal ideal itself: unlike a raw tensor
+flattening, it retains all order-$k$ interactions and remains valid for joint
+distributions on boundary faces.  What is specific here is its indexing by a
+latent-bit budget and the effective base-coded ray that escapes the resulting
+variety.  The family is highly artificial; the point is that the algebraic
+obstruction is certifying rather than merely measure-theoretic.
+
+\section{Full-support distributions}\label{sec:full-support}
+
+Support lower bounds disappear when $D$ is strictly positive on the entire
+Boolean cube, but the probabilities retain high-order interaction information.
+This gives a complementary regime in which localization complexity is not a
+proxy for support-circuit complexity.
+
+Dimension gives much larger lower bounds for generic probability tables.
+
+\begin{theorem}[Generic full-support lower bound]
+\label{thm:generic-positive}
+Fix $k\ge2$.  For Lebesgue-almost every full-support distribution $D$ on
+$\bits^n$, every $k$-localization with $\ell$ latent bits satisfies
+\[
+  d_k(n+\ell)\ge2^n.
+\]
+Consequently there is a constant $c_k>0$ such that almost every such $D$
+satisfies
+\[
+  \LC_k(D)+n\ge c_k2^{n/k}.
+\]
+\end{theorem}
+
+\begin{proof}
+For each $\ell$ satisfying $d_k(n+\ell)<2^n$,
+Theorem~\ref{thm:algebraic-certificate} places every visible marginal of an
+$\ell$-bit localization in the proper algebraic variety
+$\mathcal V_{n,k,\ell}$.  Its real points have Lebesgue measure zero in the
+$(2^n-1)$-dimensional probability simplex.  There are only finitely many
+$\ell$ satisfying the displayed inequality, so the union of these exceptional
+sets is still null.  Thus almost every $D$ obeys
+$d_k(n+\LC_k(D))\ge2^n$.  The quantitative conclusion follows from
+$d_k(N)=O_k(N^k)$.  For fixed $k$, one has $n=o(2^{n/k})$, so after
+decreasing the constant this also gives
+$\LC_k(D)=\Omega_k(2^{n/k})$ for almost every $D$.
+\end{proof}
+
+Combining the dimension obstruction with the universal feature lift determines
+the scale of the measure.
+
+\begin{corollary}[Worst-case localization complexity]
+\label{cor:worst-case}
+For every fixed $k\ge2$,
+\[
+  \max_{D\text{ on }\bits^n}\LC_k(D)=\Theta_k(2^{n/k}).
+\]
+Moreover, Lebesgue-almost every full-support distribution on $\bits^n$ has
+$k$-localization complexity $\Theta_k(2^{n/k})$.
+\end{corollary}
+
+\begin{proof}
+The upper bound for every $D$ is Theorem~\ref{thm:universal-lift}.  The matching
+lower bound for almost every full-support $D$ is
+Theorem~\ref{thm:generic-positive}; in particular, such distributions witness
+the worst-case lower bound.
+\end{proof}
+
+This argument includes localizations whose joint distribution lies on a
+proper support face; only the visible marginal is assumed to have full support.
+It therefore cannot be reduced to dimension counting for positive restricted
+Boltzmann machines alone.  The result is generic, while
+Corollary~\ref{cor:superincreasing} gives a closed-form but extremely
+ill-conditioned worst-case ray and Corollary~\ref{cor:noisy-parity} gives a
+natural logarithmic example.  Theorem~\ref{thm:exchangeable-window} supplies
+the missing superlogarithmic structured example: at fixed inverse temperature
+one, its closed-form exchangeable law has complexity
+$\Theta_k(n^{1/k})$ and likelihood ratio below $e^3$.  Its probabilities are
+transcendental, so finding a comparably transparent rational or finite-precision
+family remains open.  Such bounds are intrinsically distributional, since the
+support recognizer for every distribution in this section is the constant-one
+circuit.
+
+\subsection{Interior versus closure lifts}
+\label{sec:interior-vs-closure}
+
+The definition of a $k$-localization allows the lifted joint law to sit on a
+proper face of the marginal polytope even when the visible marginal is
+strictly positive.  The following restriction removes that allowance.
+
+\begin{definition}[Interior localization complexity]\label{def:interior}
+Let $D$ have full support on $\bits^n$ and let $k\ge2$.  Define
+$\LC_k^{\circ}(D)$ as the least $\ell$ such that some strictly positive
+distribution $Q$ on $\bits^{n+\ell}$ whose log-density has multilinear degree
+at most $k$ satisfies $\operatorname{marg}_XQ=D$, with
+$\LC_k^{\circ}(D)=\infty$ if no such $\ell$ exists.
+\end{definition}
+
+A strictly positive law with degree-at-most-$k$ log-density is $k$-local with
+the entire marginal polytope as its face, so
+\[
+  \LC_k(D)\le\LC_k^{\circ}(D).
+\]
+Every upper construction in this paper---the block-feature lift of
+Theorem~\ref{thm:universal-lift}, the digit banks of
+Theorem~\ref{thm:exchangeable-window}, and the weight-encoding graphs behind
+Proposition~\ref{prop:parity} and Corollary~\ref{cor:noisy-parity}---exposes a
+proper face: the lifted joint law is a boundary point of the model even when
+the visible marginal is strictly positive.  Conversely, every lower bound in
+this paper is proved against the closure.  The results here therefore leave
+open whether the boundary is ever necessary.  The question is the
+localization analogue of the distinction between rank and border rank in
+algebraic complexity \cite{bcs97}.
+
+\begin{conjecture}[Boundary lifts help]\label{conj:interior}
+For every $k\ge2$ there is a full-support distribution $D$ with
+\[
+  \LC_k(D)<\LC_k^{\circ}(D).
+\]
+\end{conjecture}
+
+Two neighboring questions are open as well: whether $\LC_k^{\circ}(D)$ is
+finite for every full-support law, and whether the gap can grow with $n$.
+Noisy parity is a concrete candidate for a growing gap:
+Corollary~\ref{cor:noisy-parity} localizes $D_{n,t}$ with
+$\lceil\log_2(n+1)\rceil$ bits by exposing the weight-encoding graph, and we
+know of no interior quadratic localization of comparable size.  A debordering
+theorem---an upper bound on $\LC_k^{\circ}$ in terms of $\LC_k$ and
+$n$---would transfer every closure lower bound in this paper to positive
+architectures, including the strictly positive general Boltzmann machine.
+
+\section{A zero-temperature lower-bound transfer}
+\label{sec:zero-temperature}
+
+The polynomial method sees only supports.  A different limit imports
+auxiliary-variable lower bounds for pseudo-Boolean optimization into the
+full-support regime.  For any function $f:\bits^n\to\mathbb R$, define its
+degree-$k$ auxiliary complexity by
+\[
+  \operatorname{aux}_k(f)
+  =\min\left\{\ell:
+  f(x)=\min_{h\in\bits^\ell}g(x,h)
+  \text{ for some }\deg(g)\le k\right\}.
+\]
+Thus $\operatorname{aux}_2$ is the usual unrestricted quadratization
+complexity.  For $0<t<1$, let
+\[
+  D_{f,t}(x)=\frac{t^{f(x)}}{\sum_{z\in\bits^n}t^{f(z)}}.
+\]
+Every $D_{f,t}$ has full support.
+
+The basic sum-to-min passage is classical in tropical algebraic statistics:
+large-parameter marginal maps tropicalize to inference functions, and this has
+been used to study graphical and hidden-variable model dimensions
+\cite{pachtersturmfels04,cuetomortonsturmfels10,montufarmorton17}.  The result
+below is not a new assertion that marginalization tropicalizes.  Its content is
+the hidden-bit lower-bound comparison across arbitrary boundary faces.  The
+elementary closedness fact below replaces any need for a definable choice of
+localizations or a Puiseux expansion.
+
+\begin{lemma}[Closed finite tropical image]
+\label{lem:closed-tropical-image}
+Let $T\subseteq X\times H$ be finite with every fiber
+$T_x=\{h:(x,h)\in T\}$ nonempty, and let $V\le\mathbb R^T$ be a linear
+subspace.  Then
+\[
+  \Phi_T(V)=
+  \left\{
+    \left(\max_{h\in T_x}v(x,h)\right)_{x\in X}:v\in V
+  \right\}
+\]
+is a closed finite union of polyhedral cones.
+\end{lemma}
+
+\begin{proof}
+For every selector $\sigma$ with $\sigma(x)\in T_x$, let
+\[
+  C_\sigma=
+  \{v\in V:v(x,\sigma(x))\ge v(x,h)\text{ for all }x,h\in T_x\}.
+\]
+This is a polyhedral cone, and on it $\Phi_T$ is the linear map
+$v\mapsto(v(x,\sigma(x)))_x$.  A linear image of a polyhedral cone is a
+closed polyhedral cone.  There are finitely many selectors, and their cones
+cover $V$.
+\end{proof}
+
+\begin{theorem}[Zero-temperature transfer]
+\label{thm:zero-temperature}
+For every real-valued $f$ and every $k\ge2$,
+\[
+  \liminf_{t\downarrow0}\LC_k(D_{f,t})
+  \ge \operatorname{aux}_k(f).
+\]
+Equivalently, for all sufficiently small positive $t$,
+\[
+  \LC_k(D_{f,t})\ge\operatorname{aux}_k(f).
+\]
+\end{theorem}
+
+\begin{proof}
+Adding a constant to $f$ changes neither side, so assume $\min_x f(x)=0$.
+Since $\operatorname{aux}_k(f)$ is a finite integer, failure of the eventual
+inequality would make one fixed
+$\ell<\operatorname{aux}_k(f)$ occur at arbitrarily small temperatures.
+
+\emph{Step 1: stabilize one support face along a subsequence.}
+Suppose that some $\ell<\operatorname{aux}_k(f)$ localizes $D_{f,t}$ for
+arbitrarily small $t$.  Choose a sequence $t_j\downarrow0$ and corresponding
+$\ell$-bit localizations $Q_j$; fewer bits may be padded by deterministic-zero
+bits.  By Theorem~\ref{thm:face-gibbs}, each support is the inverse image of a
+face of the fixed finite polytope $P_k(n+\ell)$.  Passing to a subsequence
+makes the support a fixed set $T$.  Every visible fiber $T_x$ is nonempty
+because $D_{f,t_j}$ has full support.
+
+\emph{Step 2: pass to the tropical limit on the fixed face.}
+Let $V_T$ be the space of restrictions to $T$ of degree-at-most-$k$
+polynomials.  The face--Gibbs form gives $\log Q_j|_T\in V_T$.  Put
+$s_j=-\log t_j$ and
+\[
+  v_j=\frac{\log Q_j|_T}{s_j}\in V_T.
+\]
+For every $x$, the finite log-sum-exp bound gives
+\[
+  0\le
+  \frac{\log D_{f,t_j}(x)}{s_j}
+  -\max_{h\in T_x}v_j(x,h)
+  \le\frac{\log|T_x|}{s_j}.
+\]
+The leftmost difference is written in this order because
+$D_{f,t_j}(x)=\sum_{h\in T_x}Q_j(x,h)$.  Since
+\[
+  \frac{\log D_{f,t_j}(x)}{s_j}
+  =-f(x)-\frac{
+    \log\sum_z t_j^{f(z)}}{s_j}
+  \longrightarrow-f(x),
+\]
+we have $\Phi_T(v_j)\to-f$.  Lemma~\ref{lem:closed-tropical-image} supplies
+$v\in V_T$ with
+\[
+  -f(x)=\max_{h\in T_x}v(x,h).
+\]
+Choose a degree-at-most-$k$ polynomial $g$ whose restriction to $T$ is
+$-v$.  Then $f(x)=\min_{h\in T_x}g(x,h)$.
+
+\emph{Step 3: remove the face constraint by an exposing penalty.}
+The fixed support $T$ is facial, so Corollary~\ref{cor:ground-state} supplies
+a nonnegative degree-at-most-$k$ polynomial $E$ whose zero set is exactly
+$T$.  Choose
+\[
+  M>
+  \max\left(
+    \{0\}\cup
+    \left\{\frac{f(x)-g(x,h)}{E(x,h)}:(x,h)\notin T\right\}
+  \right).
+\]
+Then $g+ME$ has unconstrained hidden minimum $f$, contradicting
+$\ell<\operatorname{aux}_k(f)$.
+\end{proof}
+
+Figure~\ref{fig:zero-temperature} isolates the three operations in the proof:
+select a stable face, tropicalize the positive marginal, and remove the face
+constraint by a penalty.
+\FloatBarrier
+\begin{figure}[!ht]
+\centering
+\begin{tikzpicture}[
+  >={Latex[length=2mm]},
+  node distance=10mm,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=5pt,
+              minimum height=15mm, text width=29mm, fill=blue!4,
+              line width=.5pt}
+]
+  \node[box] (ray) {normalized Gibbs ray\\
+    $D_{f,t}(x)\propto t^{f(x)}$\\$\min f=0$};
+  \node[box, right=of ray] (lift) {lift subsequence on a fixed face $T$\\
+    $v_j=s_j^{-1}\log Q_j|_T$};
+  \node[box, fill=green!5, right=of lift] (constrained) {closed tropical\\image\\
+    $-f(x)=\max_{h\in T_x}v(x,h)$};
+  \node[box, fill=green!5, right=of constrained] (unrestricted) {face-penalized reduction\\
+    $f(x)=\min_h\{g(x,h)+ME(x,h)\}$};
+  \draw[->] (ray) -- (lift);
+  \draw[->] (lift) -- (constrained);
+  \draw[->] (constrained) -- (unrestricted);
+\end{tikzpicture}
+\caption{Mechanism of the zero-temperature transfer, with
+$s_j=-\log t_j$ and $T_x=\{h:(x,h)\in T\}$.  Scaled log-sum-exp converges to
+fiberwise maximum; closedness of the finite tropical image produces one
+degree-$k$ limit on the face, and the exposing energy removes the constraint.}
+\label{fig:zero-temperature}
+\end{figure}
+\FloatBarrier
+
+This theorem is a one-way transfer: an arbitrary degree reduction preserves a
+minimum, not the complete finite-temperature partition sum.  Its advantage is
+that every lower bound on the unrestricted quantity $\operatorname{aux}_k(f)$,
+with no arithmetic restriction on $f$, now yields a distributional lower bound
+without any support complexity.
+
+The next result gives a fixed-temperature, well-conditioned lower bound inside
+one of the most classical structured classes of distributions.  Call $D$ on
+$\bits^n$ \emph{exchangeable} if $D(x)$ depends only on $|x|$.
+
+\begin{lemma}[Facial conditioning]
+\label{lem:facial-conditioning}
+Let $C\subseteq\bits^n$ be the zero set of a nonnegative degree-at-most-$k$
+polynomial.  If $D(C)>0$, then
+\[
+  \LC_k(D(\mathord\cdot\mid C))\le \LC_k(D).
+\]
+The same bound holds after pulling the conditional law back along a bijection
+$\psi:\bits^m\to C$ obtained by duplicating coordinates and fixing
+coordinates to constants.
+\end{lemma}
+
+\begin{proof}
+Let $Q(x,h)$ localize $D$, and use Theorem~\ref{thm:face-gibbs} to choose a
+nonnegative degree-$k$ energy $E_Q$ exposing its support and a degree-$k$
+potential $\theta_Q$ for its positive weights.  If $E_C$ exposes $C$, then
+$E_Q(x,h)+E_C(x)$ exposes
+$\supp(Q)\cap(C\times\bits^\ell)$, and $\theta_Q$ remains a Gibbs potential
+there after changing the normalizing constant.  This is a localization of the
+conditional law with the same hidden bits.  Substituting duplicated or fixed
+Boolean coordinates into the energy and potential does not increase their
+multilinear degree, proving the pullback assertion.
+\end{proof}
+
+\begin{theorem}[Exchangeable scale and a well-conditioned analytic family]
+\label{thm:exchangeable-window}
+For every $k\ge2$ and every exchangeable distribution $D$ on $\bits^n$,
+\[
+  \LC_k(D)
+  \le k\left\lceil(n+1)^{1/k}\right\rceil.
+  \tag{1}
+\]
+Put
+\[
+  r_n=2^{\lfloor\log_2(n+1)\rfloor},
+  \qquad m_n=\log_2 r_n,
+  \qquad \alpha_n=2^{1/r_n},
+\]
+and define the fixed full-support law
+\[
+  D_n(x)=
+  \frac{\exp(-\alpha_n^{|x|})}
+       {\sum_{z\in\bits^n}\exp(-\alpha_n^{|z|})}.
+  \tag{2}
+\]
+If
+\[
+  q_{n,k}=\min\{\ell\ge0:d_k(m_n+\ell)\ge r_n\},
+\]
+then
+\[
+  \LC_k(D_n)\ge q_{n,k}.
+  \tag{3}
+\]
+Consequently, for every fixed $k$,
+\[
+  \LC_k(D_n)=\Theta_k(n^{1/k}),
+  \qquad
+  \max_xD_n(x)/\min_xD_n(x)<e^3.
+  \tag{4}
+\]
+Thus the worst-case exchangeable scale is $\Theta_k(n^{1/k})$, witnessed by
+one closed-form family with a universal likelihood-ratio bound.
+\end{theorem}
+
+\begin{figure}[!t]
+\centering
+\resizebox{0.86\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\small,
+  >={Latex[length=2mm]},
+  node distance=7mm,
+  stage/.style={draw=black!65, line width=.5pt, rounded corners=2pt,
+    fill=blue!4, align=center, inner sep=4pt, minimum height=15mm},
+  proofstep/.style={draw=black!55, line width=.45pt, rounded corners=2pt,
+    fill=green!5, align=center, inner sep=3.5pt, minimum height=12mm},
+  flow/.style={->, line width=.55pt}
+]
+  \node[stage, text width=28mm] (upper-input)
+    {visible state\\$x\longmapsto s=|x|$};
+  \node[stage, text width=49mm, right=of upper-input] (upper-digits)
+    {$k$ one-hot base-$L$ digit banks\\
+     $s=\sum_{j=0}^{k-1}L^j a_j$\\
+     unique graph exposed by $P$};
+  \node[stage, text width=47mm, right=of upper-digits] (upper-lookup)
+    {one degree-$k$ cell per code\\
+     $\prod_j y_{j,a_j}$\\
+     $\theta$ supplies $\log p_s$; $R$ removes $p_s=0$};
+  \node[font=\bfseries\small, above=2mm of upper-digits]
+    {(a) Radial lookup: $L=\lceil(n+1)^{1/k}\rceil$, using $kL$ hidden bits};
+  \draw[flow] (upper-input) -- (upper-digits);
+  \draw[flow] (upper-digits) -- (upper-lookup);
+
+  \node[stage, text width=39mm, below=22mm of upper-input] (lower-blocks)
+    {$D_n(x)\propto e^{-\alpha^{|x|}}$\\
+     $B_0\sqcup\cdots\sqcup B_{m-1}\sqcup F$\\
+     $|B_j|=2^j$; all bits in $F$ are $0$};
+  \node[stage, text width=48mm, right=of lower-blocks] (lower-face)
+    {quadratically exposed\\diagonal copy $C$\\
+     all bits in each $B_j$ agree\\
+     $u\mapsto\psi(u)$, $|\psi(u)|=\sum_j2^ju_j$};
+  \node[stage, text width=39mm, right=of lower-face] (lower-table)
+    {normalized $m$-bit table\\
+     $A_m(u)=Z_C^{-1}e^{-\alpha^{\operatorname{val}(u)}}$\\
+     $r=2^m$, $\alpha=2^{1/r}$\\
+     $\LC_k(A_m)\le\LC_k(D_n)$};
+  \node[font=\bfseries\small, above=2mm of lower-face]
+    {(b) Fixed-temperature lower bound by facial conditioning};
+  \draw[flow] (lower-blocks) -- (lower-face);
+  \draw[flow] (lower-face) -- (lower-table);
+
+  \node[proofstep, text width=27mm, below=8mm of lower-blocks] (eisenstein)
+    {$X^r-2$ is\\Eisenstein at $2$};
+  \node[proofstep, text width=29mm, right=5mm of eisenstein] (basis)
+    {$1,\alpha,\ldots,\alpha^{r-1}$\\are $\mathbb Q$-independent};
+  \node[proofstep, text width=32mm, right=5mm of basis] (lw)
+    {Lindemann--Weierstrass\\
+     $e^{-1},e^{-\alpha},\ldots,e^{-\alpha^{r-1}}$\\are algebraically independent};
+  \node[proofstep, text width=36mm, right=5mm of lw] (ideal)
+    {homogeneous marginal\\certificate\\
+     $d_k(m+\ell)<r$\\$\Longrightarrow A_m\notin\mathcal V_{m,k,\ell}$\\
+     $\Longrightarrow\LC_k(A_m)>\ell$};
+  \draw[flow] (eisenstein) -- (basis);
+  \draw[flow] (basis) -- (lw);
+  \draw[flow] (lw) -- (ideal);
+\end{tikzpicture}
+}
+\caption{Order-matching mechanisms for exchangeable laws.  Panel (a) gives the
+radial base-$L$ lookup.  Panel (b) conditions on an exposed diagonal copy $C$
+and pulls back to $A_m$; the displayed inequality is the hardness direction.
+Its unnormalized weights are algebraically independent, and homogeneity
+removes the common normalization, so the face alone is not the obstruction.}
+\label{fig:exchangeable-constructions}
+\end{figure}
+
+\begin{proof}
+\emph{Part I: the radial lookup upper bound.}
+Write $D(x)=p_{|x|}$, allowing zero values,
+put $L=\lceil(n+1)^{1/k}\rceil$, and introduce $k$ groups of hidden bits
+$y_{j,a}$, where $0\le j<k$ and $0\le a<L$.  The nonnegative quadratic
+polynomial
+\[
+  P(x,y)=
+  \sum_{j=0}^{k-1}\left(1-\sum_{a=0}^{L-1}y_{j,a}\right)^2
+  +\left(
+    |x|-\sum_{j=0}^{k-1}L^j\sum_{a=0}^{L-1}a y_{j,a}
+  \right)^2
+\]
+exposes the graph of the unique base-$L$ expansion of $|x|$, since
+$n<L^k$.  For $\mathbf a=(a_0,\ldots,a_{k-1})$, write
+$w(\mathbf a)=\sum_jL^ja_j$.  Adding the nonnegative degree-$k$ lookup
+\[
+  R(y)=
+  \sum_{\substack{w(\mathbf a)\le n\\p_{w(\mathbf a)}=0}}
+  \prod_{j=0}^{k-1}y_{j,a_j}
+\]
+restricts the graph to $\supp(D)$.  On that graph the degree-$k$ potential
+\[
+  \theta(y)=
+  \sum_{\substack{w(\mathbf a)\le n\\p_{w(\mathbf a)}>0}}
+  (\log p_{w(\mathbf a)})
+  \prod_{j=0}^{k-1}y_{j,a_j}
+\]
+equals $\log D(x)$.  The face--Gibbs theorem now gives (1) using $kL$ hidden
+bits.
+
+\emph{Part II: the conditioned diagonal lower bound.}
+Abbreviate $r=r_n$, $m=m_n$, and $\alpha=\alpha_n$.
+Use $r-1$ visible coordinates in blocks $B_0,\ldots,B_{m-1}$ of sizes
+$1,2,4,\ldots,2^{m-1}$.  Their total size is
+$\sum_{j=0}^{m-1}2^j=r-1\le n$, so set the remaining $n-r+1$ coordinates to
+zero.  The set $C$ on which every block is constant is a diagonal copy of
+$\bits^m$ that is quadratically exposed in the order-$k$ feature polytope by
+\[
+  E_C(x)=
+  \sum_{i\text{ fixed}}x_i+
+  \sum_{j=0}^{m-1}\sum_{i\in B_j\setminus\{b_j\}}
+  (x_i-x_{b_j})^2,
+\]
+where $b_j\in B_j$.  Pulling $D_n(\mathord\cdot\mid C)$ back to
+$u\in\bits^m$ gives unnormalized weights
+\[
+  w_j=\exp(-\alpha^j),
+  \qquad 0\le j<r,
+  \tag{5}
+\]
+because the block-constant point indexed by $u$ has Hamming weight
+$j=\sum_{i=0}^{m-1}2^iu_i$.
+
+The polynomial $X^r-2$ is irreducible by Eisenstein's criterion at $2$.
+Hence $1,\alpha,\ldots,\alpha^{r-1}$ are linearly independent over
+$\mathbb Q$.  It follows from the Lindemann--Weierstrass theorem that the
+numbers in (5) are algebraically independent over $\mathbb Q$
+\cite[Theorem~3.2]{popescu24}.  Indeed, after collecting monomials, a polynomial relation
+would give
+\[
+  \sum_{\mathbf a}c_{\mathbf a}
+  \exp\!\left(-\sum_{j=0}^{r-1}a_j\alpha^j\right)=0,
+  \qquad c_{\mathbf a}\in\mathbb Q.
+\]
+Distinct multi-indices $\mathbf a$ give distinct algebraic exponents by the
+power-basis independence, while Lindemann--Weierstrass makes their
+exponentials linearly independent over the algebraic numbers.
+
+Suppose $\LC_k(D_n)\le\ell<q_{n,k}$.  Lemma~\ref{lem:facial-conditioning}
+would give an $\ell$-bit localization of the normalized table in (5).  But
+$d_k(m+\ell)<r=2^m$, so
+Theorem~\ref{thm:algebraic-certificate} supplies a nonzero homogeneous
+$H\in\mathbb Z[p_u:u\in\bits^m]$ that vanishes on every such marginal,
+including lifts on boundary faces.  Algebraic independence gives
+$H((w_j)_j)\ne0$.  If $Z=\sum_jw_j$ and $\Delta=\deg H$, then homogeneity gives
+$H((w_j/Z)_j)=Z^{-\Delta}H((w_j)_j)\ne0$, so normalization introduces no
+loophole.
+This contradiction proves (3).
+
+\emph{Part III: asymptotics.}
+Finally, $d_k(s)=\Theta_k(s^k)$, $r>(n+1)/2$, and $m=O(\log n)$, so
+$q_{n,k}=\Theta_k(n^{1/k})$; combine this with (1).  Also
+$1\le\alpha^{|x|}<4$ because $n<2r$, proving the likelihood-ratio bound.
+\end{proof}
+
+The $k=2$ upper bound is the distributional form of the two-digit symmetric
+quadratization of Boros, Crama, and Rodr\'iguez-Heck
+\cite[Theorem~6]{bcrh20}; the $k$-digit lookup is its direct higher-locality
+extension.  The block identification follows Anthony, Boros, Crama, and
+Gruber \cite[Lemma~5.1]{anthony16}.  The new ingredients are facial
+conditioning, the Eisenstein--Lindemann specialization, and the resulting
+fixed-temperature localization lower bound.
+
+\section{Dense-table recognition}
+\label{sec:recognition}
+
+The face--Gibbs description also gives a finite decision procedure without
+computing a marginal ideal.  Algebraic invariants and semialgebraic membership
+tests are classical for fixed latent graphical models: Critch gives such a
+test for binary hidden Markov models \cite{critch13}, while Seigal and
+Mont\'ufar give an explicit semialgebraic description of a small RBM
+\cite{seigalmontufar18}.  Our problem instead asks uniformly over the full
+order-$k$ interaction model, a prescribed binary latent budget, and all lifted
+support faces.  The contribution below is the resulting exact algorithm and
+bit-complexity bound, not the general notion of model membership.  The input
+model matters here: the following
+statements concern a dense exact table: all $2^n$ probabilities, including
+zeros, are listed as binary numerator--positive-denominator pairs.  They do
+not concern samples or a succinct probability circuit.  Write
+$\lVert D\rVert_{\rm bit}$ for the table's total bit length.
+
+\begin{theorem}[Exact rational-table recognition]
+\label{thm:etr-recognition}
+Let $D$ be a rational distribution on $\bits^n$, let $k\ge2$ and $\ell\ge0$,
+and put $N=n+\ell$.  In time polynomial in
+\[
+  \lVert D\rVert_{\rm bit}+2^N d_k(N)
+\]
+one can construct an existential formula over the reals that is satisfiable if
+and only if $\LC_k(D)\le\ell$.  Consequently, for every fixed $k$ and constant
+$c$, the language of well-formed pairs $(D,\ell)$ satisfying
+$\ell\le cn$ and $\LC_k(D)\le\ell$ belongs to $\exists\mathbb R$; malformed
+tables and pairs with $\ell>cn$ are rejected in polynomial time.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+Introduce one variable triple $(q_y,e_y,w_y)$ per lifted state $y$: the
+$e_y$ range over the values of a degree-$k$ energy, the $w_y$ over
+trace-Gibbs weights coded by positive parameters, and complementarity
+constraints force $q_y$ to be positive exactly where $e_y=0$ and to equal
+$w_y$ there.  Vertexwise nonnegativity of $e$ makes its zero set an exposed
+face, so Theorem~\ref{thm:face-gibbs} gives soundness; the face--Gibbs form
+of any localization gives completeness, with unused hidden budget handled by
+padding.  The encoding length is polynomial in the stated quantity.
+Appendix~\ref{app:etr-encoding} gives the full formula and the size
+accounting.
+\end{proof}
+
+The direct formula proves membership in $\exists\mathbb R$, but it introduces
+variables for all $2^N$ lifted states.  Stratifying first by support face leaves
+only $d_k(N)-1$ continuous Gibbs parameters and gives a stronger bit-model
+algorithm.
+
+\begin{lemma}[Enumeration and recovery of facial supports]
+\label{lem:face-enumeration}
+Put
+\[
+  V=\{\chi_k(y):y\in\bits^N\},\qquad
+  M=2^N,\qquad d=d_k(N),\qquad P=\operatorname{conv}V.
+\]
+Then $\dim\operatorname{aff}P=d-1$.  Every nonempty face $F$ of $P$ has a
+set $B\subseteq\bits^N$ such that
+\[
+  |B|=\dim F+1\le d,
+  \qquad
+  \operatorname{aff}\chi_k(B)=\operatorname{aff}F,
+\]
+and $F$ is the smallest face containing $\chi_k(B)$.
+
+For any nonempty $B\subseteq\bits^N$ with $|B|\le d$, let $F_B$ be that
+smallest face and put $T_B=\chi_k^{-1}(F_B)$.  For $y\in\bits^N$, the
+condition $y\notin T_B$ is equivalent to feasibility of the rational LP
+\[
+  \langle a,\chi_k(b)\rangle=0\quad(b\in B),\qquad
+  \langle a,\chi_k(z)\rangle\ge0\quad(z\in\bits^N),\qquad
+  \langle a,\chi_k(y)\rangle\ge1.
+  \tag{6}
+\]
+Consequently, all nonempty facial supports can be enumerated, with
+duplication, using
+\[
+  C(M,d)=\sum_{j=1}^d\binom Mj
+\]
+candidate sets and $MC(M,d)$ rational LPs, in total bit complexity
+$(Md)^{O(d)}\operatorname{poly}(N)$.
+\end{lemma}
+
+\begin{proof}
+The evaluations on the Boolean cube of the distinct multilinear monomials of
+degree at most $k$ are linearly independent, by Boolean M\"obius inversion.
+Thus $V$ spans $\mathbb R^d$ linearly, while the constant feature is identically
+one, proving $\dim\operatorname{aff}P=d-1$.  The singleton features make
+$\chi_k$ injective, and the affine Hamming-distance functional
+\[
+  z\longmapsto
+  \sum_{i:y_i=0}z_i+\sum_{i:y_i=1}(1-z_i)
+\]
+uniquely minimizes at $y$, so every element of $V$ is a vertex.
+
+A $q$-dimensional face has $q+1$ affinely independent vertices spanning its
+affine hull.  Their preimages form the required $B$: the smallest face
+containing them is contained in $F$ and has affine hull containing
+$\operatorname{aff}F$, hence equals $F$.
+
+If (6) is feasible, its zero hyperplane exposes a face
+containing $B$ and excluding $y$.  Conversely, if $y\notin T_B$, expose
+$F_B$, use the constant feature to shift the minimum to zero, and divide by
+the positive value at $\chi_k(y)$.  This gives a feasible LP vector.
+Each LP has $d$ variables, at most $M+d+1$ constraints, and explicit binary
+encoding length $O(Md+N)$, so exact rational LP feasibility is polynomial in
+that length.  Finally, $C(M,d)\le dM^d$, which gives the stated total bound.
+\end{proof}
+
+\begin{lemma}[Bit complexity of existential real feasibility]
+\label{lem:etr-bit-bound}
+Consider an existential sentence in $v$ real variables whose quantifier-free
+part is a Boolean combination of sign conditions on $s$ integer polynomials.
+Suppose their degrees are at most $\delta$, their coefficient bit sizes are at
+most $\tau$, and the total sparse binary encoding length is $\Lambda$.  The
+sentence can be decided deterministically in
+\[
+  (\Lambda+\tau)^{O(1)}(s\delta)^{O(v)}
+  \tag{$\mathsf{ETR}$}
+\]
+bit operations.  The bound permits strict inequalities and arbitrary
+quantifier-free Boolean combinations.
+\end{lemma}
+
+\begin{proof}
+The existential decision bound of Basu, Pollack, and Roy uses
+$s^{v+1}\delta^{O(v)}$ arithmetic operations and integers of bit size at most
+$\tau\delta^{O(v)}$ \cite[Theorem~13.13, p.~516]{basu06}; see also
+\cite[Theorem~1.1]{renegar92}.  Implementing those integer operations in the
+bit model and accounting for the sparse formula encoding gives
+$\mathsf{ETR}$.  Rational coefficients are handled by clearing positive
+denominators.
+\end{proof}
+
+\begin{theorem}[Quasipolynomial dense-table recognition]
+\label{thm:qp-recognition}
+Let $D$ be a dense rational probability table on $\bits^n$, let $k\ge2$ and
+$\ell\ge0$,
+and put
+\[
+  N=n+\ell,\qquad M=2^N,\qquad d=d_k(N).
+\]
+There is a deterministic bit-model algorithm deciding whether
+$\LC_k(D)\le\ell$ in time
+\[
+  \operatorname{poly}(\lVert D\rVert_{\rm bit}+N)(Md)^{O(d)}.
+  \tag{\(\star\)}
+\]
+Consequently, for every fixed $k$ and $c$, the restriction to
+$\ell\le cn$ is decidable, for total input length $L$, in time
+\[
+  L^{O_{k,c}(\log^k L)}
+  =\exp\!\bigl(O_{k,c}(\log^{k+1}L)\bigr).
+\]
+In particular, $k=2$, $\ell=1$ recognition is in
+$\operatorname{TIME}(\exp(O(\log^3L)))$.
+\end{theorem}
+
+\begin{proof}
+\emph{Step 1: enumerate candidate facial supports.}
+Reject malformed tables first, and assume henceforth that
+$S=\supp(D)$ is nonempty.  Lemma~\ref{lem:face-enumeration} enumerates every
+nonempty facial support $T\subseteq\bits^N$, possibly with duplication, using
+at most $C(M,d)\le dM^d$ candidates and total LP work $(Md)^{O(d)}$.
+
+\emph{Step 2: decide exact Gibbs feasibility on one face.}
+Fix one recovered nonempty face $T$ and reject it unless its visible
+projection is exactly $S$.  On $T$, every positive trace-Gibbs weight has,
+up to a common factor, the form
+\[
+  z_y(\theta)=
+  \prod_{\substack{\varnothing\ne A\subseteq[N]\\|A|\le k}}
+  \theta_A^{y_A},
+  \qquad \theta_A>0.
+\]
+For $x\in S$, put
+\[
+  S_x(\theta)=\sum_{h:(x,h)\in T}z_{(x,h)}(\theta).
+\]
+Choose $x_0\in S$ and write $D(x)=p_x/r_x$ with $r_x>0$.  The normalized
+trace law has visible marginal $D$ exactly when the following system is
+feasible:
+\[
+  \theta_A>0,\qquad
+  p_{x_0}r_xS_x(\theta)-p_xr_{x_0}S_{x_0}(\theta)=0
+  \quad(x\in S).
+  \tag{7}
+\]
+These equations say that the positive vector $(S_x)_x$ has the same ratios as
+$D$; normalization then makes the vectors equal.  Hence the face--Gibbs
+theorem proves both soundness and completeness of this test.
+
+\emph{Step 3: account for bit complexity.}
+For system (7), the parameters in Lemma~\ref{lem:etr-bit-bound} satisfy
+\[
+  v=d-1,\qquad s\le M+d,\qquad \delta\le d-1,
+\]
+and its sparse encoding length is
+$O(Md+\lVert D\rVert_{\rm bit})$.  Indeed, across the
+$S_x$, every lifted state contributes once; repeated appearances of
+$S_{x_0}$ contribute at most $|S|2^\ell\le M$ further monomials.  Its sparse
+encoding therefore has $O(Md)$ symbol occurrences and coefficient bit length
+polynomial in $\lVert D\rVert_{\rm bit}$.  Lemma~\ref{lem:etr-bit-bound}
+therefore decides (7) in
+$(Md)^{O(d)}\operatorname{poly}(\lVert D\rVert_{\rm bit})$ bit operations
+per recovered face.  Multiplying by the $dM^d$ candidate faces and including
+their LP work preserves (\(\star\)).  A localization using
+fewer than $\ell$ bits may be padded with hidden bits exposed at zero, so the
+test decides the budget inequality.
+
+\emph{Step 4: substitute the dense-table parameters.}
+Finally, when $\ell\le cn$, dense input gives $M\le L^{c+1}$,
+$N=O_c(\log L)$, and $d=O_{k,c}(\log^kL)$.  Substitution in
+(\(\star\)) proves the stated bound.
+\end{proof}
+
+For full-support tables and a fixed hidden budget, the visible-only
+coefficients can also be eliminated.  This removes one power of $\log L$ from
+the exponent.
+
+\begin{theorem}[Few-variable full-support recognition]
+\label{thm:full-support-recognition}
+Fix $k\ge2$ and $\ell\ge1$, and put
+\[
+  r=d_k(n+\ell)-d_k(n).
+\]
+Given a strictly positive dense rational probability table $D$ of total bit
+length $L$,
+whether $\LC_k(D)\le\ell$ can be decided deterministically in time
+\[
+  L^{O_{k,\ell}(r+1)}
+  =L^{O_{k,\ell}(\log^{k-1}L)}
+  =\exp\!\bigl(O_{k,\ell}(\log^kL)\bigr).
+\]
+For $k=2$ and $\ell=1$, the bound is $\exp(O(\log^2L))$.
+\end{theorem}
+
+\begin{proof}
+If $n\le k$, then $\log D$ has multilinear degree at most $n\le k$, so $D$
+is already a zero-latent $k$-local Gibbs law.  Hence assume $n\ge k+1$.
+Separate the visible-only and hidden-dependent monomials in an exposing
+energy and a trace Gibbs potential:
+\[
+  E(x,h)=A(x)+B(x,h),\qquad
+  G(x,h)=C(x)+J(x,h),
+  \tag{8}
+\]
+where every monomial in $B$ or $J$ contains a hidden coordinate.  There are
+exactly $r$ such monomials.  Full visible support forces every fiber of the
+zero set of $E$ to be nonempty, so nonnegativity gives
+\[
+  A(x)=-\min_hB(x,h),\qquad
+  H_x=\operatorname*{argmin}_hB(x,h).
+  \tag{9}
+\]
+Thus $A$ need not be quantified.
+
+Exponentiate the $r$ coefficients of $J$ to positive variables $u_R$.  For
+each hidden assignment put
+\[
+  W_h(x;u)=\prod_Ru_R^{(x,h)_R},
+  \qquad
+  R_{B,u}(x)=\sum_{h\in H_x}W_h(x;u).
+  \tag{10}
+\]
+The marginal is $D$ exactly when $B,u$ can be chosen so that the two Boolean
+functions
+\[
+  -\min_hB(x,h),\qquad
+  \log D(x)-\log R_{B,u}(x)
+  \tag{11}
+\]
+have degree at most $k$.  In that case set
+$A(x)=-\min_hB(x,h)$ and
+$C(x)=\log D(x)-\log R_{B,u}(x)$.  Then
+$E=A+B$ is nonnegative with zero set
+$\{(x,h):h\in\operatorname*{argmin}_gB(x,g)\}$, while $G=C+J$ has positive
+trace weights whose sum over the fiber above $x$ is exactly $D(x)$.
+The face--Gibbs theorem therefore gives the required localization.
+Conversely, every full-support localization has (8)--(11), after absorbing its
+normalizing constant into the constant term of $C$.
+
+Appendix~\ref{app:full-support-recognition} gives the complete semialgebraic
+encoding.  It uses the vanishing of all $(k+1)$-dimensional alternating cube
+sums to test degree at most $k$, and a disjunction over the exact minimizer
+sets $H_x$ to retain all ties and boundary faces.  The global formula has
+$v=2r$ variables and degree $\delta\le2^kr$, while its polynomial count,
+sparse encoding length, and coefficient bit size are all
+$L^{O_{k,\ell}(1)}$.  Lemma~\ref{lem:etr-bit-bound} therefore decides it in
+$L^{O_{k,\ell}(r+1)}$ time.
+Since $r=O_{k,\ell}(n^{k-1})$ and $n\le\log_2L$, this is the claimed bound.
+Padding handles localizations using fewer than $\ell$ bits.
+\end{proof}
+
+\begin{corollary}[ETH barrier to dense-table hardness]
+\label{cor:recognition-eth}
+Fix $k$ and $c$.  If the language of well-formed dense rational pairs
+$(D,\ell)$ with $\ell\le cn$ and $\LC_k(D)\le\ell$ is NP-hard under
+polynomial-time many-one reductions, then the Exponential Time Hypothesis is
+false.  The same conclusion holds for every fixed-budget restriction,
+including $k=2$, $\ell=1$, and therefore also for $\exists\mathbb R$-hardness
+of any such restriction.
+\end{corollary}
+
+\begin{proof}
+Compose a hypothetical polynomial-output reduction from sparse $3$-SAT on
+$m$ variables with Theorem~\ref{thm:qp-recognition}.  Its output has length
+$L=m^{O(1)}$, so recognition takes
+$\exp(O_{k,c}(\log^{k+1}L))=2^{o(m)}$, contrary to the sparsification form of
+ETH \cite{ipz01}.  Finally, $\mathrm{NP}\subseteq\exists\mathbb R$, so
+$\exists\mathbb R$-hardness implies NP-hardness.
+\end{proof}
+
+At zero latent bits the logarithms can be eliminated completely.
+
+\begin{proposition}[The zero-latent case is in $\mathrm P$]
+\label{prop:zero-latent-p}
+Given a dense exact rational probability table $D$ and $2\le k\le n$, deciding
+whether $\LC_k(D)=0$ is deterministic polynomial-time, uniformly in $k$.
+\end{proposition}
+
+\begin{proof}
+Let $T=\supp(D)$.  First test feasibility of the rational linear system
+\[
+  \langle a,\chi_k(x)\rangle=0\quad(x\in T),
+  \qquad
+  \langle a,\chi_k(x)\rangle\ge1\quad(x\notin T).
+  \tag{\(\dagger\)}
+\]
+It is feasible exactly when $T$ is the inverse image of a face of $P_k(n)$:
+one direction is immediate.  Conversely, if $T$ is proper, a nonnegative
+exposing functional can be rescaled by its positive minimum off $T$; if
+$T=\bits^n$, take $a=0$.
+
+Next let $A_T$ be the matrix with columns $\chi_k(x)$, $x\in T$, including
+the constant feature.  Compute a rational basis $z^{(1)},\ldots,z^{(r)}$ of
+$\ker A_T$ and clear denominators.  Then
+\[
+  \log D|_T\in\operatorname{rowspan}_{\mathbb R}(A_T)
+  \quad\Longleftrightarrow\quad
+  \prod_{x\in T}D(x)^{z^{(j)}_x}=1
+  \quad(1\le j\le r).
+  \tag{\(\ddagger\)}
+\]
+For $D(x)=p_x/q_x$ on $T$ and
+$z_x=z_x^+-z_x^-$, the corresponding equality in $(\ddagger)$ is exactly
+\[
+  \prod_{x\in T}p_x^{z_x^+}q_x^{z_x^-}
+  =
+  \prod_{x\in T}q_x^{z_x^+}p_x^{z_x^-}.
+\]
+This is equality of products of positive integers with binary-encoded
+exponents, decidable in polynomial time by gcd refinement without integer
+factorization \cite[Proposition~2.1]{etessami14}; no ordering comparison is
+used.  Fraction-free Gaussian elimination produces a rational kernel basis of
+polynomial bit length, and clearing denominators preserves polynomial bit
+length.  Finally, $d_k(n)\le2^n\le\lVert D\rVert_{\rm bit}$, so the LP, feature
+matrix, and all power-product instances have size polynomial in the dense
+table input.
+Theorem~\ref{thm:face-gibbs} says that faciality $(\dagger)$ together with the
+Gibbs condition $(\ddagger)$ is exactly $\LC_k(D)=0$.
+\end{proof}
+
+The algorithms above still enumerate the lifted cube, so they do not control
+an unrestricted binary-encoded $\ell$.  For a fixed positive budget the
+remaining dense-table question is polynomial versus quasipolynomial time, not
+conventional NP-hardness unless ETH fails.  None of these results applies to
+approximate, sampled, algebraic, or succinctly represented laws.
+
+\section{Circuit and support contrast}\label{sec:circuit-support}
+\subsection{Circuit upper bounds}
+
+The following elementary principle is useful independently of the face
+theorem.
 
 \begin{theorem}[Local verification]\label{thm:local-verification}
-Let $T\subseteq\{0,1\}^N$ be nonempty, and let $U_T$ be the uniform distribution on $T$. Let $\{(S_i,\phi_i)\}_{i=1}^t$ be local constraints where each $|S_i|\le k$ and each $\phi_i$ is the $S_i$-marginal of $U_T$.
-
-Assume the following \emph{local completeness} property:
-\[
-\forall y\notin T,\ \exists i\in[t]\ \text{s.t.}\ \phi_i(y_{S_i})=0.
-\]
-Then $U_T$ is a maximum-entropy distribution among all distributions satisfying these constraints. In particular, $U_T$ is $k$-local.
+Let $T\subseteq\bits^N$ be nonempty.  Suppose
+we select marginals of $U_T$ on scopes of size at most $k$ such that every
+$y\notin T$ realizes a zero-probability local pattern in at least one selected
+marginal.  Then $U_T$ is $k$-local.
 \end{theorem}
 
 \begin{proof}
-$U_T$ is feasible by construction.
-
-Let $Q$ be any feasible distribution. If $Q(y)>0$, then for every $i$, the tuple $y_{S_i}$ has positive $Q$-marginal. Since $Q$ matches $\phi_i$, this implies $\phi_i(y_{S_i})>0$. By local completeness, this is impossible when $y\notin T$. Hence $\mathrm{supp}(Q)\subseteq T$.
-
-Therefore
-\[
-H(Q)\le \log |\mathrm{supp}(Q)|\le \log|T|=H(U_T),
-\]
-where equality on the right is the entropy of the uniform distribution on $T$. Since $U_T$ is feasible, it is a maximum-entropy feasible point.
+Any feasible distribution is supported on $T$: positive mass at $y\notin T$
+would make all of its selected local patterns positive.  Every distribution
+supported on $T$ has entropy at most $\log|T|$, with equality at $U_T$.
 \end{proof}
 
-\section{Circuit-Based Upper Bounds}
-We now instantiate Theorem~\ref{thm:local-verification} for two deterministic circuit models.
+Our circuits are finite directed acyclic graphs with free fanout, hardwired
+constants, and gates given by arbitrary Boolean truth tables of arity at most
+$r$; input wires are free and every computational gate, including the gate
+feeding a designated output, is counted.  Output terminals may also copy an
+input or gate wire.  Let $G_r(D)$ be the minimum of $m+s$ over exact generators
+that map $m$ uniform seed bits to $D$ using $s$ gates.  When no such circuit
+exists, set $G_r(D)=\infty$.  Let $C_r(S)$ be the minimum gate count of a
+single-output circuit recognizing $S$.
 
-\begin{definition}
-Let $C_r(S)$ be the minimum number of gates (including the output gate) in a fan-in-$r$ deterministic circuit that recognizes $S\subseteq\{0,1\}^n$.
-\end{definition}
+For the universal NAND basis, define $G_{\mathrm{NAND}}(D)$ and
+$C_{\mathrm{NAND}}(S)$ by the same accounting, with every computational gate
+required to be NAND.
 
-\subsection{Generator Complexity}
-
-\begin{definition}[Generator complexity]
-For $r\ge1$, a circuit $C$ with fan-in at most $r$ \emph{generates} $D$ if, on uniform random input $u\in\{0,1\}^{m(C)}$, its $n$ output bits have distribution $D$. Define
-\[
-G_r(D)=\min_C \big(m(C)+s(C)\big),
-\]
-where $s(C)$ is the number of non-output internal gates.
-We use the standard acyclic deterministic circuit model, and each output bit is the value of a designated output gate (not counted in $s(C)$).
-\end{definition}
-
-\begin{theorem}\label{thm:generator}
+\begin{theorem}[Circuit traces]\label{thm:upper-bounds}
 For every $k\ge2$,
 \[
-\LC_k(D)\le G_{k-1}(D).
+  \LC_k(D)\le G_{k-1}(D).
+\]
+If $D$ is uniform on $S$, then
+\[
+  \LC_k(D)\le C_{k-1}(S).
 \]
 \end{theorem}
 
 \begin{proof}
-Take a fan-in-$(k-1)$ generator circuit $C$ for $D$ with $m$ random input bits and $s$ non-output gates. For each input $u\in\{0,1\}^m$, let $g(u)$ be the full vector of internal gate values and let $x(u)$ be the output vector. Define
-\[
-T=\{(u,g(u),x(u)):u\in\{0,1\}^m\}.
-\]
-Let $U_T$ be uniform on $T$, with observed variables $X:=x(u)$ and latent variables $(u,g(u))$.
+For a generator, lift each random input to its complete circuit trace and take
+the uniform distribution on valid traces.  Treat the random inputs and all gate
+values as latent variables, introduce the designated outputs as visible copies,
+and impose pairwise equality constraints between output terminals and their
+source wires.  For every gate, constrain the marginal on that gate and its at
+most $k-1$ parents.  Any invalid trace violates a gate or equality relation, so
+Theorem~\ref{thm:local-verification} applies.  The visible marginal is $D$ and
+the latent count is $m+s$.
 
-For each computed node (internal gate or output gate), add one local constraint on that node together with its at most $k-1$ parent nodes, using the corresponding marginal of $U_T$. Each such constraint has arity at most $k$.
-
-If a global assignment satisfies all these local truth-table relations, then by topological induction over the DAG every computed node value is forced to be exactly the value computed from $u$, so the assignment lies in $T$. Contrapositively, if $y\notin T$, some computed node violates its local relation. For that node, the corresponding local tuple has probability $0$ under $U_T$, so local completeness holds. By Theorem~\ref{thm:local-verification}, $U_T$ is $k$-local.
-
-Finally, the observed marginal equals $D$:
-\[
-\Pr_{U_T}(X=x)=\frac{|\{u:C(u)=x\}|}{2^m}=\rho(x).
-\]
-So $U_T$ is a $k$-localization with $m+s$ latent variables, proving $\LC_k(D)\le m+s$. Minimizing over $C$ gives the claim.
+For a recognizer of $S$, take the uniform distribution on accepting traces,
+make all gate values latent, use the same gate constraints, and add the unary
+constraint that the output is one.  Its visible marginal is uniform on $S$ and
+the latent count is the circuit size.
 \end{proof}
 
-\subsection{Flat Distributions and Recognizer Circuits}
+These constructions use a special case of
+Theorem~\ref{thm:face-gibbs}: their exposing energy is a sum of nonnegative gate
+penalties, and their within-face Gibbs potential is constant.
 
-\begin{theorem}\label{thm:flat}
-If $D$ is flat on support $S$, then for every $k\ge2$,
+The preceding scope-counting argument would assign locality three to an
+ordinary binary gate.  Ground-state synthesis removes that loss.  For Boolean
+$a,b,c$, put
 \[
-\LC_k(D)\le C_{k-1}(S).
+  \Phi_{\mathrm{NAND}}(a,b,c)
+  =3-2a-2b-3c+ab+2ac+2bc.
+\]
+A direct check shows that this quadratic polynomial is zero exactly when
+$c=\operatorname{NAND}(a,b)$ and is strictly positive on the other four
+assignments.
+
+\begin{theorem}[Quadratic NAND synthesis]
+\label{thm:nand-synthesis}
+For every distribution $D$ and every nonempty $S\subseteq\bits^n$,
+\[
+  \LC_2(D)\le G_{\mathrm{NAND}}(D),
+  \qquad
+  \LC_2(U_S)\le C_{\mathrm{NAND}}(S).
+\]
+More generally, any NAND verifier for $S$ with $w$ witness bits and $s$ gates
+satisfies
+\[
+  \GSE_2(S)\le w+s,
+\]
+where $\GSE$ is the support-only ground-state extension measure defined in
+Appendix~\ref{app:support-invariants}.  If the verifier is unambiguous, then
+$\LC_2(U_S)\le w+s$ as well.
+\end{theorem}
+
+\begin{proof}
+For a NAND circuit, sum one copy of $\Phi_{\mathrm{NAND}}$ for each gate.
+For a recognizer, also add the linear penalty $1-o$ for its output wire $o$.
+The resulting nonnegative quadratic energy has one zero-energy trace above
+each $x\in S$ and none above $x\notin S$.  Its uniform ground-state law is
+therefore a quadratic local model whose visible marginal is $U_S$; all gate
+values are latent.
+
+For a generator, retain the seed and gate values as latent variables, introduce
+the generated coordinates as visible copies of the designated outputs, and
+add the quadratic equality penalties $(x_i-o_i)^2$.  There is exactly one
+zero-energy trace per seed, so the uniform ground-state law pushes forward to
+exactly the output law $D$.  This uses $m+s$ latent bits.
+
+Finally, apply the recognizer construction to the visible input, the witness,
+and the verifier trace.  Unambiguity gives exactly one zero-energy lifted state
+above each $x\in S$, so its visible marginal is uniform.  With an arbitrary
+nondeterministic verifier the same construction still projects onto $S$, but
+weights each $x$ in proportion to its number of accepting witnesses.
+\end{proof}
+
+This is the binary-circuit instance of classical ground-state synthesis
+\cite{guperales12}.  Earlier work gives a different, dynamical comparison:
+Parberry and Schnitger simulate clocked Boltzmann machines by threshold
+circuits \cite{parberryschnitger89}.  Their resources are time and
+threshold-circuit size under an update schedule.  The construction here is
+instead a static, exact encoding of an equilibrium ground support and its
+witness multiplicities.  More generally, Fourier expansion gives a direct
+diagonal Hamiltonian representation of any Boolean or real function
+\cite{hadfield21}; that representation need not have bounded locality and does
+not optimize a hidden-bit count.  The resource studied here is precisely the
+number of auxiliary bits needed while keeping the interaction order fixed.
+Its consequence for lower bounds is immediate and important:
+\[
+  C_{\mathrm{NAND}}(S)\ge \LC_2(U_S).
+\]
+Every binary Boolean gate has a constant-size NAND implementation, so this
+basis-specific complexity is within a constant factor of ordinary fan-in-two
+circuit size.  Thus a strong explicit quadratic localization lower bound for a
+uniform distribution on a support cannot evade general Boolean-circuit lower
+bounds.  Full-support
+laws, whose hardness lies in their weights rather than their support, offer a
+genuinely different target.
+
+Figure~\ref{fig:circuit-bridge} places this trace synthesis beside the reverse
+support compilation proved next and highlights the witness-multiplicity loss.
+\FloatBarrier
+\begin{figure}[!ht]
+\centering
+\begin{tikzpicture}[
+  >={Latex[length=2mm]},
+  node distance=8mm and 13mm,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=5pt,
+              minimum height=10mm, text width=31mm, fill=blue!4,
+              line width=.5pt},
+  smallbox/.style={draw, rounded corners=2pt, align=center, inner sep=4pt,
+                   minimum height=8mm, text width=32mm, fill=green!5,
+                   line width=.5pt}
+]
+  \node[box] (circuit) {NAND recognizer\\or verifier $C(x,w)$};
+  \node[box, right=of circuit] (ground)
+    {quadratic ground space\\$E_C(x,w,z)=0$};
+  \node[smallbox, above right=4mm and 13mm of ground] (flat)
+    {uniform law $U_S$\\constant multiplicity};
+  \node[smallbox, fill=orange!7, below right=4mm and 13mm of ground] (weighted)
+    {arbitrary-verifier\\witness-count law};
+  \draw[->] (circuit) -- (ground);
+  \draw[->] (ground) -- (flat);
+  \draw[->, dashed] (ground) -- node[midway, below, sloped, font=\scriptsize]
+    {arbitrary} (weighted);
+
+  \node[box, below=32mm of circuit] (local)
+    {$\ell$-bit localization\\$Q(x,h)$};
+  \node[box, fill=green!5, right=of local] (face)
+    {exposed support\\face $E(x,h)=0$\\$\deg E\le k$};
+  \node[box, fill=green!5, right=of face] (support)
+    {compiled\\nondeterministic support\\circuit\\
+     $\exists h\,[E(x,h)=0]$};
+  \draw[->] (local) -- (face);
+  \draw[->] (face) -- (support);
+\end{tikzpicture}
+\caption{The two circuit directions retain different information.  Trace
+synthesis is already quadratic, but an arbitrary verifier records accepting
+witness multiplicity rather than the uniform law.  Conversely, every
+localization exposes one lifted support face, which compiles into a
+nondeterministic support test.}
+\label{fig:circuit-bridge}
+\end{figure}
+\FloatBarrier
+
+\subsection{A natural-proofs barrier}
+\label{sec:natural-proofs}
+
+The counting bound of Theorem~\ref{thm:random-support} shows that almost
+every support is hard for the support program.  Razborov and Rudich's
+natural-proofs theorem \cite{razborovrudich97} turns exactly this abundance
+into a barrier once the certifying property is efficiently computable.
+Identify a nonempty support $S\subseteq\bits^n$ with its indicator function.
+
+\begin{proposition}[Natural-proofs status of the support program]
+\label{prop:natural-proofs}
+Fix $k\ge2$ and a function $s(n)=n^{\omega(1)}$.  Suppose the property
+$\Phi=(\Phi_n)$ of nonempty supports $S\subseteq\bits^n$ is:
+\begin{enumerate}
+  \item \emph{constructive}: decidable in time $2^{O(n)}$ from the $2^n$-bit
+  indicator table of $S$;
+  \item \emph{large}: satisfied by at least a $2^{-O(n)}$ fraction of all
+  nonempty supports; and
+  \item \emph{useful for localization}: every $S$ satisfying $\Phi_n$ has
+  $\GSE_k(S)\ge s(n)$.
+\end{enumerate}
+Then $\Phi$ is a natural property useful against $\mathrm{P/poly}$ in the
+sense of Razborov--Rudich.  Consequently, if pseudorandom function families
+of exponential hardness exist, then no such $\Phi$ exists---even though
+properties satisfying largeness and usefulness alone exist by
+Theorem~\ref{thm:random-support}.
+\end{proposition}
+
+\begin{proof}
+A degree-$2$ energy has degree at most $k$, so
+$\GSE_k(S)\le\GSE_2(S)$ and $\Phi_n$ forces $\GSE_2(S)\ge s(n)$.  If $1_S$
+has a fan-in-two Boolean circuit with $t$ gates, replacing every gate by a
+constant-size NAND implementation gives a NAND recognizer of $S$ with $O(t)$
+gates; viewed as a verifier with zero witness bits,
+Theorem~\ref{thm:nand-synthesis} yields $\GSE_2(S)=O(t)$.  Hence every $S$
+satisfying $\Phi_n$ has circuit complexity $\Omega(s(n))$, which is
+superpolynomial, so $\Phi$ is useful against $\mathrm{P/poly}$.
+Constructivity and largeness are hypotheses (1) and (2), transported along
+the identification of supports with their indicators; the excluded empty
+support corresponds to the single constant-zero function and changes no
+fraction by more than $2^{-2^n}$.  The consequence is the Razborov--Rudich
+theorem \cite{razborovrudich97}.
+\end{proof}
+
+\begin{remark}[Where this paper's methods stand]\label{rem:natural-methods}
+Largeness is automatic at the generic scale by
+Theorem~\ref{thm:random-support}, so the barrier prices only constructivity.
+The sign-definite degree $\ndeg_+$ is computable from the table in time
+$2^{O(n)}$ by linear programming, hence constructive; it is compatible with
+Proposition~\ref{prop:natural-proofs} because
+Theorem~\ref{thm:witness-product} lets it certify only logarithmically many
+latent bits, far below usefulness.  The exact selector criterion of
+Theorem~\ref{thm:selector-closure} eliminates a universal quantifier over
+$2^{\ell|S|}$ selectors and is not known to be constructive.  The counting
+bound itself computes no property.  Finally, the full-support separations of
+Sections~\ref{sec:full-support} and~\ref{sec:zero-temperature} bound no
+Boolean function's circuit size, so the natural-proofs framework does not
+constrain them; this is the precise sense in which the weight-sensitive
+regime evades the barrier.
+\end{remark}
+
+\subsection{An unconditional circuit converse}
+
+We now turn the ground-state certificate back into a circuit.  A nondeterministic
+circuit for $S\subseteq\bits^n$ is a circuit $C(x,h)$ such that
+$x\in S$ if and only if $C(x,h)=1$ for some witness $h$.  Let $\NSize(S)$ be
+the minimum witness length plus gate count over fan-in-two circuits in the
+convention above.
+
+We need a standard compilation fact.  A linear exact-threshold predicate on
+$d$ Boolean inputs tests an equality $\sum_i w_i z_i=t$.  Real weights can be
+replaced by integer weights of magnitude at most $d^{d/2+1}$ without changing
+the Boolean zero set \cite[Theorem~6]{babai21}.
+
+\begin{lemma}[Exact-threshold compilation]\label{lem:exact-threshold}
+A predicate on $N$ bits of the form
+\[
+  \sum_{A\subseteq[N],\ |A|\le k}a_A y_A=0
+\]
+has a fan-in-two Boolean circuit of size
+\[
+  O\bigl(kd+d^2\log d\bigr),
+  \qquad d=d_k(N).
+\]
+\end{lemma}
+
+\begin{proof}
+First compute the $d$ monomials, using at most $k-1$ conjunction gates per
+monomial.  Let $a\in\mathbb R^d$ be the coefficient vector, including the
+constant feature, and apply \cite[Theorem~6]{babai21} to the subspace
+$V=\ker(a)$.  It gives $w\in\mathbb Z^d$, with
+$|w_i|\le d^{d/2+1}$, such that
+\[
+  w\cdot z=0\quad\Longleftrightarrow\quad z\in V
+  \qquad(z\in\bits^d).
+\]
+Restricting this total exact-threshold predicate to the feature image
+$z=\chi_k(y)$ preserves precisely the required zero set.  The weights have
+$O(d\log d)$ bits; Appendix~\ref{app:threshold-compilation} gives the standard
+adder count.
+\end{proof}
+
+\begin{theorem}[Localization to nondeterministic circuits]
+\label{thm:converse}
+Let $D$ be a distribution on $\bits^n$ with support $S$, and suppose $D$ has a
+$k$-localization with $\ell$ latent bits.  Put $N=n+\ell$ and $d=d_k(N)$.  Then
+\[
+  \NSize(S)\le \ell+O\bigl(kd+d^2\log d\bigr).
 \]
 \end{theorem}
 
 \begin{proof}
-Let $C$ be a fan-in-$(k-1)$ recognizer for $S$ with $s$ gates total and output bit $o(x)\in\{0,1\}$. For each $x\in S$, let $g(x)$ be the full gate-value vector (including $o(x)$) and define
+Let $Q$ be the lifted $k$-local distribution.  By
+Corollary~\ref{cor:ground-state}, membership in $\supp(Q)$ is one degree-$k$
+exact-threshold test, compiled by Lemma~\ref{lem:exact-threshold}.  On visible
+input $x$, guess the $\ell$ latent bits $h$ and accept exactly when
+$(x,h)\in\supp(Q)$.  Since $D$ is the visible marginal of $Q$,
 \[
-T=\{(x,g(x)):x\in S\}.
+  x\in S\quad\Longleftrightarrow\quad
+  \exists h\in\bits^\ell\; (x,h)\in\supp(Q).
 \]
-Let $U_T$ be uniform on $T$, with observed variables $x$ and latent variables $g(x)$.
-
-As in Theorem~\ref{thm:generator}, include local constraints for every computed-node relation. Also include the unary constraint $\Pr(o=1)=1$ (equivalently, the one-variable marginal of $o$ under $U_T$).
-
-By the same topological-induction argument as in Theorem~\ref{thm:generator}, any assignment that satisfies all gate relations is exactly a valid trace for its visible input $x$. Therefore any assignment not in $T$ either violates a local gate relation or has $o=0$; in both cases some constrained local pattern has zero probability under $U_T$. Thus local completeness holds, so Theorem~\ref{thm:local-verification} implies $U_T$ is $k$-local.
-
-Its observed marginal on $x$ is uniform on $S$, i.e. exactly $D$. Therefore $\LC_k(D)\le s$, and minimizing over $C$ yields the bound.
 \end{proof}
 
-\section{Summary}
-The paper isolates one reusable proof pattern: local circuit consistency constraints can force global trace validity, and once this local completeness condition is met, uniform trace distributions are maximum-entropy $k$-local models. This gives direct upper bounds relating localization complexity to bounded fan-in deterministic circuit measures.
-% TODO(rebuild): Re-add a section on computing \LC_k (algorithms/decision problems).
-% TODO(rebuild): Re-add expanded open problems once the technical scope is restored.
+The same ground-state test can instead be expanded over all witnesses.  This
+pays exponentially in the latent count, but the complexity of each fixed
+witness slice depends only on the visible feature dimension.
+
+\begin{theorem}[Deterministic witness expansion]
+\label{thm:deterministic-converse}
+Under the hypotheses of Theorem~\ref{thm:converse}, put $d_0=d_k(n)$.  Then
+\[
+  C_2(S)
+  \le
+  O\!\left(2^\ell\bigl(kd_0+d_0^2\log d_0\bigr)\right).
+\]
+Consequently, for every fixed $k\ge2$,
+\[
+  \LC_k(D)
+  \ge
+  \log_2\!\bigl(1+C_2(\supp D)\bigr)-O_k(\log(2+n)).
+\]
+\end{theorem}
+
+\begin{proof}
+Let $E(x,h)$ be the nonnegative degree-at-most-$k$ exposing energy for the
+lifted support.  For each fixed $h\in\bits^\ell$, the predicate
+$E(x,h)=0$ is one exact-threshold test of the $d_0$ visible monomials.  Apply
+Lemma~\ref{lem:exact-threshold} to each slice and take the disjunction over all
+$2^\ell$ witnesses.  This recognizes $S$, since
+\[
+  x\in S
+  \quad\Longleftrightarrow\quad
+  \bigvee_{h\in\bits^\ell}[E(x,h)=0].
+\]
+The first bound follows.  For fixed $k$, its multiplicative factor outside
+$2^\ell$ is $n^{O(k)}\log(2+n)$; taking logarithms, with harmless additive
+ones for constant circuits, gives the second statement.
+\end{proof}
+
+Theorems~\ref{thm:converse} and~\ref{thm:deterministic-converse} expose two
+different losses.  Nondeterminism retains a polynomial dependence on
+$n+\ell$ by guessing the witness.  Deterministic simulation removes the guess
+at cost $2^\ell$, but each resulting exact-threshold slice involves only the
+visible monomials.  With exact-threshold gates as primitives, these slices
+have the normal form
+\[
+  \operatorname{OR}_{h\in\bits^\ell}
+  \circ\operatorname{EQTHR}\circ\operatorname{AND}_{\le k},
+\]
+where all slice coefficients arise from one jointly degree-$k$ polynomial in
+$(x,h)$ rather than from unrelated exact-threshold gates.  This shared
+coefficient statement refers to the original real exposing polynomial, before
+the slices are separately replaced by bounded integer weights.
+
+\begin{corollary}[Support-complexity lower bound]\label{cor:lower-bound}
+For each fixed $k\ge2$, there is a constant $c_k>0$ such that
+\[
+  \LC_k(D)+n
+  \ge c_k\!\left(
+    \left(\frac{\NSize(\supp D)}{\log(2+\NSize(\supp D))}\right)^{1/(2k)}
+  \right).
+\]
+\end{corollary}
+
+\begin{proof}
+Use $d_k(N)=O_k(N^k)$ in Theorem~\ref{thm:converse} and invert the resulting
+bound
+$\NSize(\supp D)=O_k(N^{2k}\log(2+N))$ for $N=n+\LC_k(D)$.
+\end{proof}
+
+The exponent reflects the cost of compiling an arbitrary exposing hyperplane
+into ordinary Boolean gates.  If exact-threshold gates are allowed as
+primitives, the support test uses $O(d_k(N))$ local monomials and the
+corresponding exponent improves to $1/k$ up to the chosen gate-cost convention.
+
+\subsection{Further support invariants}
+
+The two-way circuit bridge is the main support conclusion needed here.
+Appendix~\ref{app:support-invariants} develops the finer support-only theory:
+facial covers, coherent Reed--Muller witness slices, selector duality,
+almost-all-support counting bounds, the sign-definite polynomial relaxation,
+exact parity localization, and strict adjacent hierarchy separations.
+
+\section{Relation to existing models}\label{sec:related}
+
+We use the term localization complexity, but much of the statistical object is
+classical.
+
+\paragraph{Hierarchical exponential families.}
+For positive distributions, $k$-locality is exactly the order-$k$ hierarchical
+log-linear model.  Allowing zeros passes to its topological closure.  Faces of
+the marginal polytope characterize the possible boundary supports
+\cite{rauh11,malago11}; Theorem~\ref{thm:face-gibbs} packages this fact in the
+maximum-entropy language used by localization complexity.  Neighborliness of
+these polytopes gives Proposition~\ref{prop:sparse-no-lift}
+\cite{kahle10}: sufficiently sparse distributions already lie in the
+unlifted closure, for every assignment of weights to their support.
+
+\paragraph{Hidden variables and Boltzmann machines.}
+For $k=2$, the joint laws in our definition are exactly the topological closure
+of the fully connected, or general, binary Boltzmann-machine model on the
+visible and hidden units.  Thus $\LC_2$ is a hidden-unit complexity measure for
+that unrestricted closure; the statistical architecture itself is classical.
+Moser and Kameda recall universal visible representability with unrestricted
+hidden count and prove exponential hidden-unit lower bounds for memorizing
+certain visible-vector sets as associative memories \cite{moserkameda92}.
+Their lower bound concerns this vector-set memorization criterion, not exact
+representation of a prescribed weighted visible law at finite temperature; it
+therefore does not imply our generic full-support or exchangeable lower bounds.
+A recent regularized construction gives a low-temperature
+universal-approximation result while controlling energy minima
+\cite{grzybowski23}.
+
+Visible marginals of hierarchical models with hidden variables and their
+dimension have also been studied systematically in algebraic statistics
+\cite{montufarrauh17,montufarmorton17}.  Their representation theorems transfer
+directly in the upper-bound direction.  For example,
+Mont\'ufar and Rauh's Corollary~14, together with their bound on the quantities
+$D(n,j)$ appearing there, implies that the closure of the order-$r$ model on
+$n$ visible bits is contained in the visible marginals of pairwise models with
+at most
+\[
+  \sum_{j=3}^r\binom{n-1}{j-1}
+\]
+binary hidden units \cite[Corollary~14]{montufarrauh17}.  For a fixed hidden
+count, choose for approximation error $1/j$ one corresponding joint model.
+The joint probability simplex is compact, so this diagonal sequence has a
+convergent subsequence.  The face--Gibbs characterization (equivalently, the
+standard closure theorem for finite exponential families) makes its limit
+pairwise-local, and continuity of marginalization identifies its visible
+marginal with the target law.  Thus their approximation statement gives an
+exact closure localization in our convention.
+
+An RBM is a strict subarchitecture: it omits visible--visible and
+hidden--hidden edges.  Classical universal approximation places every law on
+$\bits^n$ in the closure of an RBM with at most $2^{n-1}-1$ hidden units
+\cite[Theorem~1]{montufaray11}.  This is an upper bound for the restricted
+architecture.  Conversely, RBM dimension, strong-mode, and
+linear-threshold-code lower bounds do not lower-bound $\LC_2$ without a
+comparison theorem embedding every unrestricted pairwise hidden model into an
+RBM with controlled hidden count.  Theorem~\ref{thm:generic-positive} instead proves the needed parameter
+obstruction directly and uniformly across all support faces.  Toric
+parameterization, implicitization, invariants, and semialgebraic membership
+tests for hidden graphical models are standard algebraic statistics
+\cite{geiger06,cuetomortonsturmfels10,critch13,seigalmontufar18}.  The specific
+contribution of Theorem~\ref{thm:algebraic-certificate} is the budget-indexed
+localization consequence, together with the base-coded escape that computes a
+hard Gibbs ray and an effective cold interval.  Boundary safety itself comes
+from taking the projective Zariski closure and is not a separate novelty claim.
+
+\paragraph{Extended formulations and nonnegative rank.}
+Localization complexity is a hidden-variable extension complexity, so the
+extended-formulation literature is the closest complexity-theoretic relative
+outside statistics.  There, a polytope is expressed as the projection of a
+higher-dimensional one with few facets; by Yannakakis's factorization theorem
+the minimum extension size is the nonnegative rank of the slack matrix
+\cite{yannakakis91}, unconditional exponential lower bounds are known for
+explicit polytopes \cite{fmptw15,rothvoss17}, and psd rank plays the same
+role for semidefinite extensions \cite{lrs15}.  The distributional
+counterpart of nonnegative rank is the latent class model: the nonnegative
+rank of the joint table $[D(x_A,x_B)]$ across a bipartition is the fewest
+states of one latent variable rendering the two sides conditionally
+independent.  These resources are transverse to ours in both parameters.
+First, a latent class model with $m$ states binarizes into
+$\lceil\log_2m\rceil$ hidden bits whose lifted log-density has degree
+$1+\lceil\log_2m\rceil$: mixtures embed at logarithmic interaction order, not
+at fixed $k$.  Second, the rectangle and common-information techniques behind
+extension lower bounds are mixture-shaped: they require that conditioning on
+the latent state make the visible law a product across the bipartition.
+Conditioning a $2$-local lift on its hidden bits leaves arbitrary
+visible--visible couplings, so an $\ell$-bit quadratic localization is not a
+mixture of $2^\ell$ rectangles, and nonnegative-rank lower bounds do not
+descend to $\LC_2$.  They do constrain the RBM subarchitecture, where
+conditioning on the hidden layer gives a mixture of at most $2^\ell$ product
+laws; the visible--visible and hidden--hidden couplings that separate
+$\LC_2$ from RBM hidden-unit complexity are exactly what breaks the rectangle
+structure.  No analogue of the slack-matrix factorization theorem is known
+for the faces of the $k$-marginal polytope; finding one---an exact
+factorization characterization of $\GSE_k$ or $\LC_k$---is the natural route
+by which rectangle-style arguments could enter, and is posed as a research
+direction below.
+
+\paragraph{Pseudo-Boolean quadratization.}
+Quadratization asks for a quadratic $g(x,h)$ satisfying
+\[
+  f(x)=\min_h g(x,h)
+\]
+while minimizing the number of auxiliary bits
+\cite{anthony17}.  At $k=2$, localization complexity is a distributional cousin:
+the support must be the projection of the ground states of a quadratic energy,
+and a second quadratic potential controls the relative Gibbs weights on that
+ground space.  Quadratization preserves an entire objective; localization
+preserves a distribution.  An arbitrary quadratization therefore transfers
+only to the ground support of its objective, not automatically to Gibbs
+weights.  The universal-set proof is stronger: its auxiliary variables are
+fixed monomial features whose graph is quadratically exposed.  That additional
+structure yields the exact distributional transfer in
+Theorem~\ref{thm:universal-lift}.  Lower bounds for preserving all objective
+values still do not automatically lower-bound localization, which may discard
+every nonminimal value.  Structured constructions can transfer when their
+minimizing witness is unique: the even-$n$ parity construction of
+\cite{bcrh20}, together with the corrected odd-$n$ construction in
+Proposition~\ref{prop:parity}, yields an exact localization.  The correction is
+% TODO(sam): the failure of (27) at x=1^n is verified against the authors'
+% open-access version (orbi.uliege.be/handle/2268/229971, Theorem 11 and
+% formulas (26)-(27)); confirm that the published JoCO version uses the same
+% numbering before submission, and consider a courtesy note to the authors.
+necessary because the printed odd-$n$ formula~(27) of \cite{bcrh20} fails at
+$x=1^n$.  With $L=\lceil\log_2 n\rceil$, its squared bracket there is
+\[
+  2^L-\sum_{j=1}^{L-1}2^j h_j\ge2,
+\]
+although odd parity requires minimum zero.  Their lower bound and even-$n$
+formula~(26) are unaffected.
+Degree-reduction reformulations with an arbitrary target degree have also been
+studied for polynomial optimization \cite{gonzalez25}.  They motivate the
+order-$k$ comparison, but use equality-constrained program reformulations
+rather than exact marginal distributions.
+
+Finite-union parameter obstructions likewise appear in quadratization
+\cite[Theorem~1]{anthony17} and binary linearization
+\cite[Theorem~6 and Corollary~7]{walter24}.  Our dimension lower bound applies
+that style of argument simultaneously to every hidden support face and then
+through marginalization.  The exponent is therefore shared with adjacent
+representation problems; the distributional content is the exact
+graph-exposing lift and its face-uniform converse.
+Theorem~\ref{thm:zero-temperature} gives the complementary lower-bound
+transfer: minimization does not preserve a finite-temperature marginal, but it
+is the valuation of that marginal as temperature tends to zero.  Tropical
+marginal maps and inference functions are established
+\cite{pachtersturmfels04,cuetomortonsturmfels10,montufarmorton17}; the new step
+is the closed finite tropical image across arbitrary boundary faces and the
+resulting hidden-bit inequality with unrestricted auxiliary complexity.
+
+\section{Research directions}\label{sec:directions}
+
+These results do not by themselves settle how far localization complexity
+separates from neighboring representation measures.  The following are
+concrete next tests.
+
+\begin{enumerate}
+  \item \textbf{Larger hierarchy gaps.}  Proposition~\ref{prop:hierarchy}
+  separates every adjacent pair, but only by one latent bit.  Determine how
+  large $\LC_k(D)-\LC_{k+1}(D)$ can be for explicit distributions.
+  \item \textbf{Arithmetic robustness at fixed temperature.}
+  Theorem~\ref{thm:exchangeable-window} gives a uniformly conditioned
+  $\Theta_k(n^{1/k})$ family at inverse temperature one, but its probabilities
+  are transcendental.  Find an equally transparent rational or bounded-precision
+  exchangeable family with a superlogarithmic lower bound, which will require
+  an obstruction beyond algebraic independence.
+  \item \textbf{Structured support bounds.}  The selector LP is exact and the
+  random Hamming-layer thinning is exponentially hard, but eliminating all
+  selectors for an explicit support remains open.  Ordinary rank provably
+  loses the needed labeling.  A successful degree-sensitive dual would, at
+  $k=2$, have consequences for nondeterministic circuits.
+  \item \textbf{Sharper compilation.}  Determine the right circuit class for
+  exposing energies.  Threshold or exact-threshold circuits retain the natural
+  $N^k$ feature count; standard Boolean circuits introduce a weight-simulation
+  loss.
+  \item \textbf{Algorithms.}  Theorems~\ref{thm:qp-recognition} and
+  \ref{thm:full-support-recognition} leave a polynomial-versus-quasipolynomial
+  gap for every fixed positive budget, especially $k=2$, $\ell=1$; the
+  zero-latent case is in $\mathrm P$.  Close this gap, avoid explicit expansion
+  of the hidden cube, and study sampled or succinct input models separately,
+  where the dense-table ETH barrier no longer applies.
+  \item \textbf{Robust resources.}  Define coefficient-bounded and
+  $\varepsilon$-approximate localization complexity, and determine which
+  graph lifts, lower-bound certificates, and circuit comparisons survive.
+  \item \textbf{Interior versus closure.}  Resolve
+  Conjecture~\ref{conj:interior}: exhibit a full-support law whose closure
+  localization is strictly cheaper than every interior localization, or prove
+  a debordering theorem bounding the gap
+  $\LC_k^{\circ}(D)-\LC_k(D)$.
+  \item \textbf{A factorization theorem for faces.}  Find an analogue of
+  Yannakakis's slack-matrix characterization \cite{yannakakis91} for
+  $\GSE_k$ or $\LC_k$.  Proposition~\ref{prop:natural-proofs} constrains what
+  an efficiently computable characterization could certify, so a useful one
+  must either be nonconstructive in the Razborov--Rudich sense or apply only
+  to structured supports.
+\end{enumerate}
+
+\section{Conclusion}
+
+Local marginal data can force global support through an exposed face even when
+no local pattern is individually forbidden.  Viewing the model as a
+hidden-variable extension of an extended exponential family makes the bridge
+to complexity theory precise: circuits yield local ground spaces, and local
+ground spaces yield nondeterministic circuits.  The lower-bound theory now has
+four distinct forms: filtered witness slices and selector moment duality for
+supports, a sign-definite polynomial relaxation, marginal ideals for exact
+weight certificates, and zero-temperature transfer from degree reduction.
+Together with the balanced feature lift they determine the worst-case scale.
+The same facial stratification gives quasipolynomial exact recognition from a
+dense rational table and an ETH barrier to ordinary hardness, while full
+support removes one power of $\log L$ from the exponent at fixed latent budget.
+They give a closed-form analytic fixed-temperature exchangeable family at the
+tight $\Theta_k(n^{1/k})$ structured scale and with likelihood ratio below $e^3$, a
+computable optimal-scale family with effective cold intervals, and a
+closed-form superincreasing ray whose hard tail remains existential.
+Quadratic NAND synthesis draws the boundary sharply: a strong uniform-support
+localization lower bound would already be a deterministic Boolean-circuit
+lower bound, and a ground-state-extension lower bound would lower-bound
+nondeterministic verifiers.  None of the full-support separations lower-bounds
+a support circuit.  The main remaining lower-bound targets are a rational or
+finite-precision analogue of the exchangeable separation and an explicit
+support family strong enough to cross the corresponding circuit barrier.
+
+\appendix
+
+\section{Further support invariants and examples}
+\label{app:support-invariants}
+
+\subsection{Facial covers and coherent witness slices}
+\label{sec:support-invariants}
+
+The support face retains more structure than an arbitrary nondeterministic
+witness relation.  Call a nonempty $F\subseteq\bits^n$ \emph{$k$-facial} if
+there is a canonical multilinear polynomial $p$ of degree at most $k$ such
+that $p\ge0$ on the cube and $F=\{x:p(x)=0\}$.  Equivalently,
+$F=\chi_k^{-1}(G)$ for a nonempty face $G$ of $P_k(n)$.  For nonempty
+$S\subseteq\bits^n$, define its facial cover number by
+\[
+  \fc_k(S)=\min\left\{r:S=F_1\cup\cdots\cup F_r,
+  \quad F_i\text{ is $k$-facial}\right\}.
+\]
+Also define the degree-$k$ ground-state extension complexity
+\[
+  \GSE_k(S)=\min\left\{\ell:
+  S=\{x:\exists h\in\bits^\ell,\ E(x,h)=0\},\quad
+  E\ge0,\quad\deg(E)\le k\right\},
+\]
+where $E$ is again its canonical multilinear representative.
+
+\begin{proposition}[Facial-cover lower bound]
+\label{prop:facial-cover}
+If $D$ has support $S$, then
+\[
+  \LC_k(D)\ge\GSE_k(S)
+  \ge\left\lceil\log_2\fc_k(S)\right\rceil.
+\]
+Moreover $\fc_k(S)\le|S|$, so the facial-cover relaxation by itself is capped
+at $n$ latent bits.
+\end{proposition}
+
+\begin{proof}
+An $\ell$-bit localization has a nonnegative exposing energy $E(x,h)$ by
+Corollary~\ref{cor:ground-state}, so it is a ground-state extension of its
+visible support.  For each fixed $h$, the nonempty zero set of $E_h(x)$ is
+$k$-facial, and these at most $2^\ell$ zero sets cover $S$.  This proves both
+inequalities.  Finally, every singleton $\{a\}$ is the zero set of the
+nonnegative affine Hamming-distance polynomial
+\[
+  \sum_{i:a_i=0}x_i+\sum_{i:a_i=1}(1-x_i),
+\]
+so the singleton cover gives $\fc_k(S)\le|S|$.
+\end{proof}
+
+The facial cover forgets that the slices $E_h$ come from one jointly
+low-degree polynomial.  The following exact criterion retains that coherence.
+For a function on $\bits^\ell$, write
+$\operatorname{RM}_{\mathbb R}(\ell,r)$ for the evaluation space of real
+multilinear polynomials of degree at most $r$.
+
+\begin{proposition}[Filtered slice criterion]
+\label{prop:filtered-slices}
+For a nonempty $S\subseteq\bits^n$, one has $\GSE_k(S)\le\ell$ if and only if
+there is a family indexed by every $h\in\bits^\ell$ of nonnegative canonical
+multilinear polynomials
+\[
+  p_h(x)=\sum_{\substack{A\subseteq[n]\\|A|\le k}}c_A(h)x_A
+\]
+such that
+\[
+  S=\bigcup_{h\in\bits^\ell}\{x:p_h(x)=0\}
+\]
+and, for every $A$,
+\[
+  (c_A(h))_{h\in\bits^\ell}
+  \in\operatorname{RM}_{\mathbb R}(\ell,k-|A|).
+\]
+\end{proposition}
+
+\begin{proof}
+If an extension uses fewer than $\ell$ bits, first let its energy ignore the
+additional hidden coordinates.  Given a canonical degree-$k$ energy $E(x,h)$,
+collect the coefficient of each visible monomial $x_A$.  Its dependence on $h$
+has degree at most $k-|A|$, which gives the stated family.  Conversely,
+represent each coefficient function $c_A$ by its unique multilinear polynomial
+on the hidden cube and put $E(x,h)=\sum_A c_A(h)x_A$.  Every term has total
+degree at most $k$, the slices are nonnegative, and their zero sets have
+projection exactly $S$.
+\end{proof}
+
+Thus the visible degree-$k$ part is common to every slice, the degree-$(k-1)$
+coefficient vectors vary affinely with $h$, and the lower layers follow a full
+real Reed--Muller filtration.  Rank bounds on these coefficient tables are
+necessary relaxations, but the labeled Reed--Muller membership in
+Proposition~\ref{prop:filtered-slices} is exact.  The following dual form turns
+the same obstruction into moment-matching certificates.
+
+For nonempty $T\subseteq\bits^N$, define its degree-$k$ facial closure by
+\[
+  \fcl_k(T)
+  =\chi_k^{-1}\!\left(
+    \operatorname{face}_{P_k(N)}
+      \bigl(\operatorname{conv}\chi_k(T)\bigr)
+  \right),
+\]
+where $\operatorname{face}_{P}(A)$ is the smallest face of $P$ containing
+$A$.  For a selector $\sigma:S\to\bits^\ell$, write
+$\Gamma_\sigma=\{(x,\sigma(x)):x\in S\}$.
+
+\begin{theorem}[Selector facial-closure duality]
+\label{thm:selector-closure}
+For every nonempty $S\subseteq\bits^n$,
+\[
+  \GSE_k(S)\le\ell
+  \quad\Longleftrightarrow\quad
+  \exists\sigma:S\to\bits^\ell\quad
+  \operatorname{proj}_X\fcl_k(\Gamma_\sigma)=S.
+\]
+Let $U_{\Gamma_\sigma}$ be uniform on the selected graph and put
+$m_\sigma=\E_{U_{\Gamma_\sigma}}[\chi_k]$.  For every lifted state $y$,
+\[
+  y\in\fcl_k(\Gamma_\sigma)
+  \quad\Longleftrightarrow\quad
+  \text{some distribution $R$ has }
+  \E_R[\chi_k]=m_\sigma\text{ and }R(y)>0.
+\]
+Consequently, $\GSE_k(S)>\ell$ if and only if, for every selector $\sigma$,
+there is a distribution with the same moments of order at most $k$ as
+$U_{\Gamma_\sigma}$ that puts positive mass above
+$\bits^n\setminus S$.
+\end{theorem}
+
+\begin{proof}
+Suppose first that a nonnegative degree-$k$ energy $E$ has zero set $T$ with
+$\operatorname{proj}_X T=S$.  Choose one zero-energy witness $\sigma(x)$ for
+each $x\in S$.  The face exposed by $E$ contains $\Gamma_\sigma$, so its
+smallest containing face does as well and is contained in $T$.  Its projection
+therefore contains $S$ and is contained in $S$, proving equality.  Conversely,
+the smallest face containing $\Gamma_\sigma$ is exposed by a nonnegative
+degree-$k$ affine functional of $\chi_k$.  Its preimage is a ground-state set
+whose projection is $S$.
+
+It remains to prove the moment statement.  The point $m_\sigma$ is a strictly
+positive convex combination of all vertices in $\chi_k(\Gamma_\sigma)$.
+Hence the smallest face containing $m_\sigma$ is exactly the smallest face
+containing that selected graph, and $m_\sigma$ lies in its relative interior.
+If $\chi_k(y)$ belongs to this face, relative interiority gives, for some
+$\varepsilon>0$ and $w\in P_k(N)$,
+\[
+  m_\sigma=\varepsilon\chi_k(y)+(1-\varepsilon)w.
+\]
+Expressing $w$ as a convex combination of feature vertices produces the
+claimed $R$.  Conversely, if such an $R$ exists, every face containing
+$m_\sigma$ must contain each vertex given positive mass by $R$, in particular
+$\chi_k(y)$.  The final equivalence follows by projecting this statement.
+\end{proof}
+
+The duality can be made into an exact rational linear program.  This is useful
+both computationally and for identifying where the remaining difficulty lies.
+
+\begin{proposition}[Selector LP certificates]
+\label{prop:selector-lp}
+Let $S\subsetneq\bits^n$ be nonempty, let $H=\bits^\ell$, and fix a selector
+$\sigma:S\to H$.  Put
+\[
+  A_\sigma=\{(x,\sigma(x)):x\in S\},
+  \quad B=(\bits^n\setminus S)\times H,
+  \quad C_\sigma=(S\times H)\setminus A_\sigma.
+\]
+This selector witnesses $\GSE_k(S)\le\ell$ if and only if the following
+rational linear system has a solution $a\in\mathbb R^{d_k(n+\ell)}$:
+\[
+\begin{aligned}
+  \langle a,\chi_k(y)\rangle&=0 &&(y\in A_\sigma),\\
+  \langle a,\chi_k(y)\rangle&\ge1 &&(y\in B),\\
+  \langle a,\chi_k(y)\rangle&\ge0 &&(y\in C_\sigma).
+\end{aligned}
+\tag{$\mathrm{LP}_\sigma$}
+\]
+If it is infeasible, Farkas' lemma gives rational numbers
+$\lambda_y\in\mathbb R$ for $y\in A_\sigma$ and
+$\mu_y\ge0$ for $y\notin A_\sigma$ such that
+\[
+  \sum_{y\in A_\sigma}\lambda_y\chi_k(y)
+  +\sum_{y\notin A_\sigma}\mu_y\chi_k(y)=0,
+  \qquad
+  \sum_{y\in B}\mu_y=1.
+\tag{$\mathrm{D}_\sigma$}
+\]
+Thus $\GSE_k(S)>\ell$ has a finite exact certificate consisting of one such
+dual obstruction for every selector.
+\end{proposition}
+
+\begin{proof}
+A ground-state energy is strictly positive on the finite set $B$; after
+choosing one zero witness above each point of $S$, divide its coefficients by
+the minimum on $B$ to obtain $(\mathrm{LP}_\sigma)$.  Conversely, a feasible
+system defines a nonnegative degree-$k$ energy with a zero above each
+$x\in S$ and no zero above its complement.  The displayed dual alternative is
+Farkas' lemma, with the positive total multiplier on $B$ normalized to one.
+All data are integral, so feasible primal and dual certificates may be chosen
+rational.
+\end{proof}
+
+For a fixed selector, facial closure, moment leakage, and the primal--dual pair
+above are therefore exactly computable.  The remaining universal quantifier is
+substantial: there are $2^{\ell|S|}$ selectors, and no succinct aggregation of
+their dual certificates is presently known.  Ordinary coefficient rank cannot
+remove this difficulty.
+
+\begin{lemma}[Unfiltered rank loses the support]
+\label{lem:rank-obstruction}
+For every nonempty $S\subseteq\bits^n$, there is a cover of $S$ by
+nonnegative quadratic polynomials whose coefficient vectors span a space of
+dimension at most three.
+\end{lemma}
+
+\begin{proof}
+Let $L(x)=\sum_{i=1}^n2^{i-1}x_i$, which is injective on the cube.  For each
+$a\in S$, the canonical multilinear polynomial
+\[
+  p_a(x)=(L(x)-L(a))^2
+\]
+is nonnegative, quadratic, and has zero set $\{a\}$.  Every $p_a$ lies in
+$\operatorname{span}\{1,L,\widetilde{L^2}\}$, where the tilde denotes
+multilinearization.
+\end{proof}
+
+Thus a rank or flattening that forgets how coefficient columns are labeled by
+the Boolean witnesses is bounded by three even for an arbitrary support.  The
+Reed--Muller degree of that labeling, retained by
+Proposition~\ref{prop:filtered-slices}, is the essential information.  At
+$k=2$, extracting an explicit growing lower bound from it would already prove
+a nondeterministic-circuit lower bound by Theorem~\ref{thm:nand-synthesis}.
+
+A separate face count gives exponentially large complexity on almost every
+support, even though it does not exploit the Reed--Muller filtration or the
+selector duality.
+
+\begin{theorem}[Counting bound for uniform supports]
+\label{thm:random-support}
+For every fixed $k\ge2$, there are constants $c_k,c'_k>0$ such that, for all
+sufficiently large $n$, a uniformly random nonempty
+$S\subseteq\bits^n$ satisfies
+\[
+  \GSE_k(S)>c_k2^{n/(k+1)}
+\]
+with probability at least $1-2^{-c'_k2^n}$.  Consequently the same lower bound
+holds for $\LC_k(U_S)$ with that probability.
+\end{theorem}
+
+\begin{proof}
+Fix a latent budget $L$ and put $N=n+L$.  The zero set of any nonnegative
+degree-$k$ energy on $n+\ell$ bits is the vertex set of a face of
+$P_k(n+\ell)$.  This polytope has at most $V=2^N$ vertices and affine dimension
+at most $d_k(N)-1$.  If $F$ is a face, then
+$F=P_k(n+\ell)\cap\operatorname{aff}(F)$; hence an affine basis of the vertices
+of $F$ determines the face.  Such a basis has at most $d_k(N)$ elements, so
+the number of faces is at most
+\[
+  1+\sum_{i=1}^{d_k(N)}\binom Vi
+  \le 2^{O_k(N^{k+1})}.
+\]
+Projection to the visible cube cannot increase the number of supports.  After
+summing over $0\le\ell\le L$,
+\[
+  \#\{S:\GSE_k(S)\le L\}
+  \le (L+1)2^{O_k((n+L)^{k+1})}.
+\]
+Take $L=\lfloor c_k2^{n/(k+1)}\rfloor$ with $c_k$ sufficiently small.  The
+base-two logarithm of the last display is then at most, say, $2^{n-1}$ for all
+large $n$, whereas there are $2^{2^n}-1$ nonempty supports.  The exceptional
+fraction is therefore $2^{-\Omega(2^n)}$.  Proposition~\ref{prop:facial-cover}
+transfers the result to $U_S$.
+\end{proof}
+
+The same count remains exponential after restricting the support to one
+particularly simple local face.
+
+\begin{corollary}[Random thinning of one Hamming layer]
+\label{cor:random-middle-layer}
+Fix $k\ge2$, put
+\[
+  A_n=\left\{x\in\bits^n:|x|=\left\lfloor\frac n2\right\rfloor\right\},
+  \qquad M_n=|A_n|,
+\]
+and choose $S$ uniformly among the subsets of $A_n$ of cardinality
+$\lfloor M_n/2\rfloor$.  There are constants $c_k,c'_k>0$ such that, for all
+sufficiently large $n$,
+\[
+  \GSE_k(S)>c_kM_n^{1/(k+1)}
+  =\Omega_k\!\left(
+    2^{n/(k+1)}n^{-1/(2(k+1))}
+  \right)
+\]
+with probability at least $1-2^{-c'_kM_n}$.  Consequently the same lower bound
+holds for $\LC_k(U_S)$.
+
+In contrast, $\LC_k(U_{A_n})=0$: the entire unthinned layer is the zero set of
+the nonnegative quadratic polynomial
+\[
+  \left(\sum_{i=1}^n x_i-\left\lfloor\frac n2\right\rfloor\right)^2.
+\]
+\end{corollary}
+
+\begin{proof}
+The proof of Theorem~\ref{thm:random-support} bounds the total number of
+supports satisfying $\GSE_k(S)\le L$ by
+\[
+  (L+1)2^{C_k(n+L)^{k+1}}
+\]
+for a constant $C_k$.  Take
+$L=\lfloor c_kM_n^{1/(k+1)}\rfloor$.  Since
+$M_n^{1/(k+1)}\gg n$, choosing $c_k$ sufficiently small makes this count at
+most $2^{M_n/3}$ for all large $n$.  On the other hand,
+\[
+  \binom{M_n}{\lfloor M_n/2\rfloor}
+  \ge\frac{2^{M_n}}{M_n+1}.
+\]
+The exceptional fraction among the half-subsets is therefore at most
+$(M_n+1)2^{-2M_n/3}\le2^{-c'_kM_n}$.  Finally,
+$M_n=\Theta(2^n/\sqrt n)$, and
+Proposition~\ref{prop:facial-cover} transfers the bound to $U_S$.  The displayed
+quadratic exposes $A_n$, so its uniform law is already $k$-local.
+\end{proof}
+
+For $k=2$, Theorem~\ref{thm:nand-synthesis} gives this counting result a circuit
+consequence, but not the quantitative strength of classical Shannon circuit
+counting: the present exponent is $n/3$, whereas random Boolean functions need
+circuits of order $2^n/n$.  More importantly, a strong explicit lower bound on
+$\GSE_2(S)$ would lower-bound nondeterministic NAND verifiers, and a lower bound
+on $\LC_2(U_S)$ would lower-bound deterministic NAND recognizers.  The exact
+criteria above identify the shared-slice and moment-matching structure that
+such an argument would have to exploit.
+
+\subsection{Support lower bounds and parity}
+
+The circuit converse compiles an exposing energy into a Boolean circuit.  A
+different elimination of the latent variables gives a simpler algebraic
+invariant.  For a Boolean function $f$, let $\ndeg(f)$ be the minimum degree of
+a real multilinear polynomial $p$ such that
+\[
+  p(x)\ne0\quad\Longleftrightarrow\quad f(x)=1.
+\]
+This is the nondeterministic polynomial degree introduced in the quantum-query
+literature \cite{dewolf03}.  Define its sign-definite refinement by
+\[
+  \ndeg_+(f)=\min\{\deg p:p(x)\ge0\text{ and }
+  p(x)>0\Longleftrightarrow f(x)=1\}.
+\]
+Here and below inequalities for a polynomial mean inequalities on the Boolean
+cube.  Squaring an ordinary nondeterministic polynomial and multilinearizing
+shows
+\[
+  \ndeg(f)\le\ndeg_+(f)\le\min\{n,2\ndeg(f)\}.
+\]
+
+\begin{theorem}[Nonnegative witness-product bound]
+\label{thm:witness-product}
+Let $D$ be a distribution on $\bits^n$ with proper support $S$, and let
+$\overline{1_S}$ denote the indicator of $\bits^n\setminus S$.  Then
+\[
+  \ndeg(\overline{1_S})
+  \le \ndeg_+(\overline{1_S})
+  \le k\,\fc_k(S)
+  \le k\,2^{\LC_k(D)}.
+\]
+Equivalently, every $k$-localization of $D$ with $\ell$ latent bits satisfies
+\[
+  k2^\ell\ge \ndeg_+(\overline{1_S}).
+\]
+\end{theorem}
+
+\begin{proof}
+Take an optimal facial cover $S=F_1\cup\cdots\cup F_r$, and let $p_i\ge0$ be
+a canonical degree-at-most-$k$ polynomial whose zero set is $F_i$.  Form
+\[
+  P(x)=\prod_{i=1}^r p_i(x).
+\]
+After multilinearization on the Boolean cube, $P$ has degree at most
+$kr$.  It vanishes exactly on $S$ and is positive on the complement, so it
+witnesses $\ndeg_+(\overline{1_S})\le k\fc_k(S)$.  Proposition
+~\ref{prop:facial-cover} gives $\fc_k(S)\le2^{\LC_k(D)}$.
+\end{proof}
+
+The exponential dependence on the witness length is not merely a defect of
+the proof.  The following example realizes it, up to constant factors in the
+polynomial degree.
+
+\begin{proposition}[Parity localization]\label{prop:parity}
+Let $U_{\mathrm{even},n}$ be uniform on the even-parity strings in $\bits^n$,
+where $n\ge1$.  Put
+\[
+  m=\left\lfloor\frac n2\right\rfloor+1,
+  \qquad q=\left\lfloor\frac k2\right\rfloor
+\]
+for $k\ge2$.  Then
+\[
+  \max\!\left\{0,\left\lceil\log_2\frac nk\right\rceil\right\}
+  \le \LC_k(U_{\mathrm{even},n})
+  \le
+  \left\lceil
+    \log_2\left\lceil\frac mq\right\rceil
+  \right\rceil.
+\]
+In particular, for every fixed $k\ge2$,
+\[
+  \LC_k(U_{\mathrm{even},n})=\log_2 n+O_k(1).
+\]
+For $k=2$ and $n\ge2$, more precisely,
+\[
+  \LC_2(U_{\mathrm{even},n})=\lceil\log_2 n\rceil-1.
+\]
+\end{proposition}
+
+\begin{proof}
+Suppose $p\ge0$ is positive exactly on the odd-parity strings.  The coefficient
+of $x_1\cdots x_n$ in its multilinear representation is
+\[
+  \sum_{x\in\bits^n}(-1)^{n-|x|}p(x).
+\]
+Only odd-weight strings contribute, and every nonzero summand has the same
+sign.  The coefficient is therefore nonzero, proving
+$\ndeg_+(\overline{1_{\mathrm{even}}})=n$.  Since odd parity is the complement of the
+support of $U_{\mathrm{even},n}$, Theorem~\ref{thm:witness-product} gives
+$k2^{\LC_k}\ge n$ and hence the stated integer lower bound.
+
+For the upper bound, let
+\[
+  b=\left\lceil\frac mq\right\rceil,
+  \qquad \ell=\lceil\log_2 b\rceil,
+  \qquad W(x)=\sum_{i=1}^n x_i,
+  \qquad J(h)=\sum_{j=0}^{\ell-1}2^j h_j.
+\]
+Consider the nonnegative polynomial
+\[
+  E(x,h)=\prod_{r=0}^{q-1}
+  \bigl(W(x)-2(qJ(h)+r)\bigr)^2.
+\]
+Its multilinearization has degree at most $2q\le k$.  If $x$ has even weight
+$2a$, then $E(x,h)=0$ for the unique witness encoding
+$J(h)=\lfloor a/q\rfloor$; odd-weight strings have no zero-energy witness.
+Indeed, $0\le a\le m-1$, so
+$J(h)\le\lfloor(m-1)/q\rfloor=\lceil m/q\rceil-1=b-1<2^\ell$;
+Euclidean division determines the unique factor indexed by
+$r=a-qJ(h)\in\{0,\ldots,q-1\}$, and binary encoding determines $h$ uniquely
+(also when $\ell=0$).
+Thus projection of the ground-state set is exactly even parity, with exactly
+one ground-state witness over each visible support point.  The uniform
+distribution on the ground states is therefore $k$-local by
+Theorem~\ref{thm:face-gibbs}, and its visible marginal is
+$U_{\mathrm{even},n}$.
+
+For odd $n\ge3$, the preceding construction with $q=1$ already uses
+$\lceil\log_2((n+1)/2)\rceil=\lceil\log_2 n\rceil-1$ bits.  We spell out the
+even case because uniformity requires more than the minimum-value assertion in
+an ordinary quadratization.  Let $n$ be even, put
+$L=\lceil\log_2 n\rceil$, set
+$x'=(1-x_1,x_2,\ldots,x_n)$, and use $L-1$ hidden bits in
+\[
+  E_{\mathrm{ev}}(x,h)
+  =\left(
+    W(x')-n+2^L-1-\sum_{j=1}^{L-1}2^j h_j
+  \right)^2.
+\]
+This is formula~(26) of Boros, Crama, and Rodr\'iguez-Heck after complementing
+one visible bit \cite[Theorem~11 and Remark~3]{bcrh20}.  If $x$ has even
+parity, then $W(x')$ is odd and
+\[
+  W(x')-n+2^L-1\in\{0,2,\ldots,2^L-2\}.
+\]
+It therefore has a unique expansion using the binary weights
+$2,4,\ldots,2^{L-1}$, giving exactly one zero-energy witness.  If $x$ has odd
+parity, the displayed integer is odd and cannot equal that even weighted sum.
+Thus the zero set projects exactly to even parity with constant multiplicity
+one.  This also covers $n=2$, when the hidden sum is empty.  Hence the uniform
+ground-state law has the claimed visible marginal.  The lower bound is
+$\lceil\log_2(n/2)\rceil=\lceil\log_2 n\rceil-1$ when $n\ge2$.
+\end{proof}
+
+The nonnegativity requirement retains the sign-definiteness that
+ordinary nondeterministic degree discards; parity shows that this can sharpen
+the polynomial degree from about $n/2$ to $n$.  The bound remains deliberately
+modest from the viewpoint of circuit complexity: $\ndeg_+(f)\le n$, so
+Theorem~\ref{thm:witness-product} can force only $\Omega(\log n)$ latent bits.
+Strong circuit consequences would require an invariant that also sees the
+low-degree dependence of all witness slices $E_h$ on the common witness $h$,
+rather than eliminating those slices by their product.
+
+The same method already separates adjacent levels of the locality hierarchy.
+
+\begin{proposition}[Strict adjacent hierarchy]\label{prop:hierarchy}
+For every $k\ge3$ and every $n\ge k+1$, let
+\[
+  S_{k,n}
+  =\bigl(\bits^{k+1}\setminus\{1^{k+1}\}\bigr)
+    \times\bits^{n-k-1},
+  \qquad D_{k,n}=U_{S_{k,n}}.
+\]
+Then
+\[
+  \LC_k(D_{k,n})=1,
+  \qquad
+  \LC_{k+1}(D_{k,n})=0.
+\]
+\end{proposition}
+
+\begin{proof}
+The complement indicator of $S_{k,n}$ is $\mathrm{AND}_{k+1}$ on the first
+$k+1$ variables, whose nondeterministic degree is $k+1$ \cite{dewolf03}.  If
+$D_{k,n}$ had a
+$k$-localization with no latent bit, Theorem~\ref{thm:witness-product} would
+give $k+1\le k$, a contradiction.  Hence $\LC_k(D_{k,n})\ge1$.
+
+For the matching upper bound, partition the first $k+1$ visible variables into
+sets
+$A,B$ with $|A|=2$ and $|B|=k-1$, and put
+\[
+  a(x)=\prod_{i\in A}x_i,
+  \qquad b(x)=\prod_{i\in B}x_i.
+\]
+For one latent bit $h$, define
+\[
+  E(x,h)=(1-h)a(x)+h b(x).
+\]
+This polynomial is nonnegative on the Boolean cube and has degree at most $k$.
+Its ground states project to $S_{k,n}$: a visible point has a zero-energy witness
+exactly when $a(x)=0$ or $b(x)=0$.  Points with $a=b=0$ have two ground-state
+witnesses, while points with exactly one of $a,b$ equal to zero have one.
+
+On the ground-state set use the degree-at-most-$(k-1)$ Gibbs potential
+\[
+  \theta(x,h)=-(\log 2)(1-a(x)-b(x)).
+\]
+When $a=b=0$, each of the two witnesses has unnormalized weight $1/2$; when
+exactly one block product vanishes, the unique witness has weight $1$.
+Consequently every $x\in S_{k,n}$ has total unnormalized visible weight one;
+the remaining $n-k-1$ bits are free and uniform.
+Theorem~\ref{thm:face-gibbs} therefore gives a $k$-localization whose visible
+marginal is $D_{k,n}$, proving $\LC_k(D_{k,n})\le1$.
+
+Finally, the degree-$(k+1)$ nonnegative energy
+$a(x)b(x)=\prod_{i=1}^{k+1}x_i$ has zero set $S_{k,n}$.  Its uniform ground-state
+distribution is $(k+1)$-local without latent variables, so
+$\LC_{k+1}(D_{k,n})=0$.
+\end{proof}
+
+\section{Further full-support hierarchy separations}
+\label{app:full-support-hierarchy}
+
+\begin{proposition}[No-latent characterization]\label{prop:positive-no-latent}
+Let $D$ be a full-support distribution on $\bits^n$.  Then
+$\LC_k(D)=0$ if and only if there is a multilinear polynomial $p$ of degree at
+most $k$ such that
+\[
+  D(x)=\frac{\exp(p(x))}{\sum_{z\in\bits^n}\exp(p(z))}.
+\]
+Equivalently, the unique multilinear representation of $\log D$ has degree at
+most $k$.
+\end{proposition}
+
+\begin{proof}
+When $D$ has full support, its support face in
+Theorem~\ref{thm:face-gibbs} is the entire marginal polytope.  The claimed
+Gibbs form is therefore necessary and sufficient.  Normalization changes only
+the constant coefficient of $\log D$.
+\end{proof}
+
+The next example shows that a single hidden bit can remove one order of a
+strictly positive interaction.
+
+\begin{proposition}[Full-support adjacent hierarchy]
+\label{prop:positive-hierarchy}
+For every $k\ge2$ and every ambient dimension $n\ge k+1$, there is a
+full-support distribution $D$ on $\bits^n$ such that
+\[
+  \LC_k(D)=1,
+  \qquad
+  \LC_{k+1}(D)=0.
+\]
+The localization witnessing the first equality may itself be chosen with full
+support.
+\end{proposition}
+
+\begin{proof}
+Put $r=k+1$ and
+\[
+  z=\frac{(e-1)^r}{4e^{2r}},
+  \qquad \gamma=\log z<0.
+\]
+On $\bits^r$, let
+\[
+  g(x)=\log\!\left(1+\exp\!\left(\gamma+\sum_{i=1}^r x_i\right)\right).
+\]
+Write its unique multilinear expansion as
+\[
+  g(x)=q_0(x)+\lambda\prod_{i=1}^r x_i,
+  \qquad \deg(q_0)\le r-1=k.
+\]
+This displayed choice makes the top coefficient $\lambda$ nonzero.  Indeed,
+expanding $\log(1+z e^{\sum_i x_i})$ in powers of $z$ gives
+\[
+  \lambda
+  =\sum_{m\ge1}\frac{(-1)^{m+1}z^m}{m}(e^m-1)^r.
+\]
+Writing $a=ze^r<1/4$, the absolute value of the tail after the first term is
+at most
+\[
+  \sum_{m\ge2}\frac{a^m}{m}
+  \le \frac{a^2}{2(1-a)}
+  < z(e-1)^r,
+\]
+where the last inequality follows from
+$z=(e-1)^r/(4e^{2r})$.  Hence $\lambda\ne0$.
+
+Let $h$ be one hidden bit and define the strictly positive joint distribution
+\[
+  Q(x,h)\ \propto\
+  \exp\!\left(-q_0(x)+h\left(\gamma+\sum_{i=1}^r x_i\right)\right).
+\]
+Its log-density has degree at most $k$: the visible term has degree at most
+$k$, and each interaction $hx_i$ is quadratic.  Hence $Q$ is $k$-local.  Its
+visible marginal is
+\[
+  D(x)\ \propto\
+  e^{-q_0(x)}\left(1+e^{\gamma+\sum_i x_i}\right)
+  =\exp\!\left(\lambda\prod_{i=1}^r x_i\right).
+\]
+Thus the resulting distribution $D_0$ on $\bits^r$ has full support and
+$\LC_k(D_0)\le1$.  Proposition
+~\ref{prop:positive-no-latent} and $\lambda\ne0$ rule out a zero-latent
+$k$-localization, so $\LC_k(D_0)=1$.  Its log-density has degree $k+1$, making
+$D_0$ itself $(k+1)$-local.
+
+For any $n>r$, take $D=D_0\otimes U_{\bits^{n-r}}$.  Tensoring both the
+one-bit localization and the zero-latent $(k+1)$-local model with independent
+uniform bits preserves their degree bounds.  Conversely, the multilinear
+representation of $\log D$ still contains the nonzero degree-$(k+1)$ monomial
+$\lambda\prod_{i=1}^r x_i$, so Proposition~\ref{prop:positive-no-latent}
+still rules out a zero-bit $k$-localization.  This proves both equalities in
+every ambient dimension.
+\end{proof}
+
+Marginalizing one binary hidden unit produces a soft-plus term, a standard
+device in hierarchical-model representation theory \cite{montufarrauh17}.
+The claim here is the resulting exact adjacent-level separation, including the
+matching zero-hidden lower bound and the explicit parameter choice, rather
+than the soft-plus identity itself.  The hierarchy example has only a one-bit
+gap.
+
+\section{Further consequences of the zero-temperature transfer}
+\label{app:transfer-consequences}
+
+\begin{corollary}[Noisy parity]
+\label{cor:noisy-parity}
+Let $\pi_n(x)$ be the odd-parity indicator, let $n\ge2$, and put
+$D_{n,t}=D_{\pi_n,t}$.  For each $n$ there is a threshold $t_0(n)\in(0,1)$ such that
+every $0<t<t_0(n)$ satisfies
+\[
+  \lceil\log_2 n\rceil-1
+  \le \LC_2(D_{n,t})
+  \le \lceil\log_2(n+1)\rceil.
+\]
+Thus any choice of $t_n<t_0(n)$ gives the asymptotic family
+$\LC_2(D_{n,t_n})=\Theta(\log n)$.
+\end{corollary}
+
+\begin{proof}
+Boros, Crama, and Rodr\'iguez-Heck use the convention that parity is one on
+even Hamming weight.  Substituting $x_1\mapsto1-x_1$ swaps their convention
+with our odd-parity indicator while preserving polynomial degree and the
+number of auxiliary variables.  Their lower bound
+\cite[Theorem~5]{bcrh20} and the square encodings used in the proof of
+Proposition~\ref{prop:parity}---our $q=1$ formula for odd $n$ and their
+formula~(26) for even $n$---attain this bound, after complementing one visible
+bit as just described.  Thus
+$\operatorname{aux}_2(\pi_n)=\lceil\log_2 n\rceil-1$, and
+Theorem~\ref{thm:zero-temperature} gives the lower bound.
+
+For the upper bound, let $L=\lceil\log_2(n+1)\rceil$ and
+$J(h)=\sum_{j=0}^{L-1}2^j h_j$.  The quadratic energy
+\[
+  E(x,h)=\left(\sum_{i=1}^n x_i-J(h)\right)^2
+\]
+exposes the graph of the binary encoding of the Hamming weight, with one
+witness above every $x$.  On this graph $\pi_n(x)=h_0$.  Assigning log-weight
+$(\log t)h_0$ on the graph and applying
+Theorem~\ref{thm:face-gibbs} gives an $L$-bit quadratic localization of
+$D_{n,t}$ for every $0<t<1$.
+\end{proof}
+
+The transfer also gives a closed-form worst-case family for every locality.
+
+\begin{corollary}[Superincreasing Gibbs rays]
+\label{cor:superincreasing}
+Fix $n,k,\ell$ with $d=d_k(n+\ell)<2^n$, enumerate the visible cube as
+$x^{(0)},\ldots,x^{(2^n-1)}$, and set
+\[
+  B=\left\lceil d^{d/2}\right\rceil+2,
+  \qquad f(x^{(i)})=B^i.
+\]
+Then $\operatorname{aux}_k(f)>\ell$.  Consequently
+\[
+  \LC_k(D_{f,t})>\ell
+\]
+for all sufficiently small $t>0$.  For every fixed $k$, choose a sufficiently
+small $c_k>0$ and, for all sufficiently large $n$, set
+$\ell_n=\lfloor c_k2^{n/k}\rfloor-n\ge0$ below the dimension threshold.  This
+gives an explicit full-support Gibbs ray with an existential hard cold tail
+at the asymptotically optimal scale; the cold threshold may depend on
+$n,k$, and the ray.
+\end{corollary}
+
+\begin{proof}[Proof roadmap]
+After choosing one minimizing witness for each visible input, any putative
+degree-$k$ reduction would place the superincreasing vector
+$(1,B,\ldots,B^{2^n-1})$ in the column space of a $0$--$1$ feature matrix with
+only $d$ columns.  An augmented minor is a nonzero integer polynomial in $B$;
+Hadamard's inequality bounds its coefficients, and the Cauchy root bound
+excludes the displayed choice of $B$.  The complete determinant argument is
+given in Appendix~\ref{app:superincreasing-details}.
+\end{proof}
+
+The energy values in Corollary~\ref{cor:superincreasing} have enormous dynamic
+range.  The family is explicit in the mathematical sense, but not moderately
+conditioned or algorithmically convenient, and the proof does not make its
+cold threshold effective.  Noisy parity is far more natural, at the price of
+only a logarithmic bound.
+
+\section{The direct existential encoding}
+\label{app:etr-encoding}
+
+\begin{proof}[Proof of Theorem~\ref{thm:etr-recognition}]
+For each $y=(x,h)\in\bits^N$, introduce variables $q_y,e_y,w_y$.
+Introduce coefficients $a_A$ for $|A|\le k$, a positive variable $s$, and
+positive variables $u_A$ for $1\le |A|\le k$.  Explicitly impose
+$s>0$ and $u_A>0$, and impose
+\[
+  e_y=\sum_{|A|\le k}a_Ay_A,
+  \qquad
+  w_y=s\prod_{\substack{1\le |A|\le k\\y_A=1}}u_A.
+\]
+Here each $y_A\in\{0,1\}$ is input data for the constraint indexed by $y$;
+an empty product means $w_y=s$.  For every $y$, also impose
+\[
+  q_y\ge0,\quad e_y\ge0,\quad q_ye_y=0,\quad q_y+e_y>0,
+  \quad q_y(q_y-w_y)=0.
+  \tag{\(*\)}
+\]
+Writing the listed entry $D(x)$ as $p_x/r_x$ with $r_x>0$, finally impose
+\[
+  r_x\sum_{h\in\bits^\ell}q_{(x,h)}-p_x=0
+  \qquad(x\in\bits^n).
+  \tag{\(**\)}
+\]
+These are polynomial equalities and inequalities with integer coefficients.
+The displayed products may be replaced by chains of quadratic equations.
+Strict inequalities are standard in the existential theory of the reals; in
+an equation-only normal form, $p>0$ may instead be written
+$\exists r\;pr^2=1$.
+
+The strict constraint in $(*)$ is essential.  Together with complementarity
+it forces $q_y>0$ if and only if $e_y=0$.  The marginal equations make this
+set nonempty.  Define
+\[
+  \alpha(v)=\sum_{|A|\le k}a_Av_A,
+  \qquad
+  F=P_k(N)\cap\{v:\alpha(v)=0\}.
+\]
+Vertexwise nonnegativity of $e$ makes $F$ an exposed face, and
+\[
+  \supp(q)=\{y:e_y=0\}=\chi_k^{-1}(F).
+\]
+Thus $e$ is a nonnegative degree-$k$ energy exposing the support, while on
+that support
+\[
+  q_y=s\prod_{1\le |A|\le k}u_A^{y_A},
+  \qquad
+  \log q_y=\log s+\sum_{1\le |A|\le k}y_A\log u_A.
+\]
+Equations $(**)$ normalize $q$ and give it visible marginal $D$.
+In particular,
+\[
+  1=s\sum_{y\in\supp(q)}
+  \exp\!\left(\sum_{1\le |A|\le k}y_A\log u_A\right),
+\]
+so $s$ is the reciprocal partition factor required by the face--Gibbs form.
+Theorem~\ref{thm:face-gibbs} therefore proves soundness.  Conversely, its
+face--Gibbs form supplies such $a_A,s,u_A$ for any localization.  If that
+localization uses $r<\ell$ bits, append bits $h'$ fixed to zero, replace its
+exposing energy $E$ by $E+\sum_jh'_j$, and set every Gibbs parameter involving
+a padded bit to one.  This preserves the weights and exposes the padded face.
+
+There are $2^N$ lifted states.  Including binary variable and subset indices,
+the formula has encoding length
+\[
+  O\!\left(\lVert D\rVert_{\rm bit}
+  +2^Nd_k(N)\operatorname{poly}(N)\right),
+\]
+which is polynomial in the quantity stated in the theorem because
+$N\le\log_2(2^Nd_k(N))$.
+If $\ell\le cn$ and $k,c$ are fixed, the explicit table length
+$L=\lVert D\rVert_{\rm bit}$ satisfies $L\ge2^n$, and hence
+\[
+  2^{n+\ell}d_k(n+\ell)
+  \le L^{c+1}\operatorname{poly}_k(\log L).
+\]
+This gives the claimed $\exists\mathbb R$ membership.  No hardness conclusion
+is asserted.
+\end{proof}
+
+\section{Few-variable full-support recognition details}
+\label{app:full-support-recognition}
+
+We spell out the formula used in
+Theorem~\ref{thm:full-support-recognition}, including the treatment of tied
+minimizers.
+
+\begin{lemma}[Boolean subcube degree test]
+\label{lem:subcube-degree}
+Let $F:\bits^n\to\mathbb R$.  Its canonical multilinear polynomial has degree
+at most $k$ if and only if, for every $I\subseteq[n]$ of size $k+1$ and every
+fixing $a\in\bits^{[n]\setminus I}$,
+\[
+  \sum_{z\in\bits^I}(-1)^{|z|}F(a,z)=0.
+  \tag{12}
+\]
+When $k\ge n$, the condition is vacuous and every function has degree at most
+$k$.
+\end{lemma}
+
+\begin{proof}
+The left side of (12), up to sign, is the iterated Boolean finite difference
+$\Delta_I F(a)$.  If $\deg F\le k$, every such difference vanishes.  Conversely,
+write $F=\sum_Sc_Sx_S$.  For fixed $I$, the function
+$a\mapsto\Delta_IF(a)$ has canonical coefficients $c_{I\cup J}$ as $J$ ranges
+over subsets of $[n]\setminus I$.  Its vanishing at every Boolean $a$ forces
+all these coefficients to vanish.  Every $S$ of size greater than $k$ contains
+some $I$ of size $k+1$, so $c_S=0$.
+\end{proof}
+
+If $n\le k$, every strictly positive table is already a zero-latent
+$k$-local Gibbs law, so the recognition algorithm accepts immediately.
+For the remainder of this construction assume $n\ge k+1$.
+
+Let $H$ denote the $\ell$ hidden coordinates and put
+\[
+  \mathcal R=
+  \{R\subseteq[n+\ell]:|R|\le k,\ R\cap H\ne\varnothing\},
+  \qquad |\mathcal R|=r.
+\]
+For variables $b=(b_R)_{R\in\mathcal R}$ and
+$u=(u_R)_{R\in\mathcal R}$, define
+\[
+  B_b(x,h)=\sum_{R\in\mathcal R}b_R(x,h)_R,
+  \qquad
+  W_h(x;u)=\prod_{R\in\mathcal R}u_R^{(x,h)_R}.
+  \tag{13}
+\]
+For every nonempty $K\subseteq\bits^\ell$, choose a canonical $h_K\in K$ and
+write
+\[
+\begin{split}
+  \operatorname{ExactMin}_{x,K}(b):={}&
+  \bigwedge_{h\in K} B_b(x,h)=B_b(x,h_K)\\
+  &{}\wedge
+  \bigwedge_{g\in\bits^\ell\setminus K}
+  B_b(x,g)>B_b(x,h_K),\\
+  R_K(x;u):={}&\sum_{h\in K}W_h(x;u).
+\end{split}
+\tag{14}
+\]
+Thus (14) says that $K$ is the complete minimizer set, not merely a selected
+subset of minimizers.
+
+Let $Q$ be a $(k+1)$-dimensional Boolean subcube, and partition its vertices
+as $Q_+$ and $Q_-$ according to even and odd parity in its free coordinates.
+For a tuple $\mathbf K=(K_x)_{x\in Q}$ of nonempty subsets of $\bits^\ell$,
+let $\Psi_{Q,\mathbf K}(b,u)$ be the conjunction of
+\[
+  \bigwedge_{x\in Q}\operatorname{ExactMin}_{x,K_x}(b),
+  \tag{15}
+\]
+\[
+  \sum_{x\in Q_+}-B_b(x,h_{K_x})
+  =
+  \sum_{x\in Q_-}-B_b(x,h_{K_x}),
+  \tag{16}
+\]
+and
+\[
+  \prod_{x\in Q_+}D(x)
+  \prod_{x\in Q_-}R_{K_x}(x;u)
+  =
+  \prod_{x\in Q_-}D(x)
+  \prod_{x\in Q_+}R_{K_x}(x;u).
+  \tag{17}
+\]
+The rational denominators in (17) are cleared.  The promised global
+existential formula is
+\[
+  \exists b\in\mathbb R^r\ \exists u\in\mathbb R^r\quad
+  \left[
+    \left(\bigwedge_{R\in\mathcal R}u_R>0\right)
+    \wedge
+    \bigwedge_Q
+    \bigvee_{\mathbf K}
+    \Psi_{Q,\mathbf K}(b,u)
+  \right].
+  \tag{18}
+\]
+
+For any fixed $b$, the exact minimizer set of $B_b(x,\cdot)$ is unique, so the
+disjuncts chosen on overlapping subcubes in (18) are automatically
+consistent.  Equations (16) for all $Q$, together with
+Lemma~\ref{lem:subcube-degree}, say exactly that
+$x\mapsto-\min_hB_b(x,h)$ has degree at most $k$.  Since every term in (17)
+is positive, taking logarithms shows that (17) is precisely the alternating
+cube identity for
+\[
+  x\longmapsto \log D(x)-
+  \log\sum_{h\in\operatorname*{argmin}_gB_b(x,g)}W_h(x;u).
+\]
+Thus the second function in (11) also has degree at most $k$.  This proves
+soundness of (18); completeness follows by taking the actual minimizer sets
+of any localization in (8)--(11).  Strict inequalities in (14) permit ties
+inside $K_x$ while excluding precisely the nonminimizers, so boundary joint
+supports are included.
+
+There are
+$\binom{n}{k+1}2^{n-k-1}=O_k(2^nn^{k+1})$ subcubes.  For fixed $k,\ell$, the
+number of tuples $\mathbf K$ per subcube is constant.  Each $R_K$ is a sum of
+at most $2^\ell$ monomials of degree at most $r$, so (17) has degree at most
+$2^kr$.  Expand the products in (17); because $k$ and $\ell$ are fixed, this
+changes the encoding size by only a constant factor per subcube, and clearing
+the rational denominators preserves polynomial coefficient bit length.
+Formula (18) has $2r$ variables and size polynomial in the dense input length
+$L\ge2^n$.  The standard singly exponential real-algebraic bound therefore
+gives $L^{O_{k,\ell}(r+1)}$ bit operations.  This completes the complexity
+bookkeeping used in
+Theorem~\ref{thm:full-support-recognition}.
+
+\section{Exact-threshold compilation details}
+\label{app:threshold-compilation}
+
+We complete the gate count in Lemma~\ref{lem:exact-threshold}.  Each of the
+$d$ feature monomials uses at most $k-1$ fan-in-two conjunctions, for
+$O(kd)$ gates.  The integerized coefficient of each feature has
+$B=O(d\log d)$ signed bits.  Fix a two's-complement width
+\[
+  W=B+\lceil\log_2 d\rceil+2.
+\]
+This width contains the sum of all $d$ signed terms without overflow.
+Hardwire and sign-extend each coefficient to width $W$, then mask it by the
+corresponding feature bit; this constructs all conditional summands $w_i z_i$
+in $O(dW)=O(dB)$ gates.  Add them in a balanced tree of width-$W$
+ripple-carry adders.  Level $j$ has $O(d/2^j)$ additions, so the whole tree
+uses $O(dW)=O(dB)$ gates.  The final zero test costs $O(W)$ gates.  Together
+with the feature gates this gives
+$O(kd+d^2\log d)$ fan-in-two Boolean gates.
+
+\section{Effective marginal-ideal certificates}
+\label{app:effective-certificates}
+
+\begin{proof}[Full proof of Corollary~\ref{cor:effective-tables}]
+Choose a nonzero homogeneous
+$F\in I(\mathcal V_{n,k,\ell})\cap\mathbb Z[p_x:x\in\bits^n]$ of degree
+$\Delta$.  Such an $F$ is computable by Theorem~\ref{thm:algebraic-certificate},
+and necessarily $\Delta\ge1$.  Enumerate the visible states as
+$x_0,\ldots,x_{2^n-1}$ and put
+\[
+  f(x_i)=(\Delta+1)^i.
+\]
+Write a degree-$\Delta$ monomial as
+$\prod_i p_{x_i}^{\alpha_i}$, where $0\le\alpha_i\le\Delta$ and
+$\sum_i\alpha_i=\Delta$.  Under the substitution
+$p_{x_i}=t^{f(x_i)}$, its exponent is
+$\sum_i\alpha_i(\Delta+1)^i$.  Uniqueness of base-$(\Delta+1)$ expansion shows
+that distinct monomials acquire distinct exponents.  Hence
+\[
+  P(t)=F((t^{f(x)})_x)
+\]
+is a nonzero polynomial in $t$.
+
+The polynomial $P$ has only finitely many roots, but we can obtain an effective
+entire cold interval rather than test isolated values.  Write
+\[
+  P(t)=t^e\left(a_0+\sum_{j\ge1}a_jt^j\right),
+  \qquad a_0\ne0,
+\]
+and put $A=\sum_{j\ge1}|a_j|$.  If $A=0$, set $\tau=1$; otherwise set
+\[
+  \tau=\min\left\{1,\frac{|a_0|}{2A}\right\}.
+\]
+For every real $0<t<\tau$,
+\[
+  \left|\sum_{j\ge1}a_jt^j\right|
+  \le At<\frac{|a_0|}{2},
+\]
+so $P(t)\ne0$.  The normalized table
+\[
+  D_t(x)=\frac{t^{f(x)}}{\sum_z t^{f(z)}}
+\]
+has full support, and it is rational whenever $t$ is rational.  Homogeneity
+gives throughout this interval
+$F(D_t)=(\sum_z t^{f(z)})^{-\Delta}P(t)\ne0$, so
+Theorem~\ref{thm:algebraic-certificate} yields $\LC_k(D_t)>\ell$.
+
+For the asymptotic statement, fix $k$ and use
+$d_k(N)=\sum_{j=0}^k\binom Nj=O_k(N^k)$.  Choose $c_k>0$ sufficiently small
+and, for all sufficiently large $n$, set
+\[
+  \ell_n=\lfloor c_k2^{n/k}\rfloor-n\ge0.
+\]
+Then $N=n+\ell_n=\lfloor c_k2^{n/k}\rfloor$ and
+$d_k(N)<2^n$.  Applying the preceding effective construction gives a
+computable integer energy $f_n$ and a rational $\tau_n>0$ such that every
+$0<t<\tau_n$ satisfies
+$\LC_k(D_{f_n,t})>\ell_n=\Omega_k(2^{n/k})$.
+\end{proof}
+
+\section{The superincreasing determinant argument}
+\label{app:superincreasing-details}
+
+\begin{proof}[Full proof of Corollary~\ref{cor:superincreasing}]
+Suppose $\operatorname{aux}_k(f)\le\ell$.  A reduction using fewer than
+$\ell$ bits can be padded by ignored bits, so write
+$f(x)=\min_h g(x,h)$ with exactly $\ell$ auxiliary bits, and choose one
+minimizer $\sigma(x)$ for each $x$.  Writing $g$ in the $d$ monomials of degree
+at most $k$ gives
+\[
+  (1,B,\ldots,B^{2^n-1})^\mathsf T=A_\sigma c,
+\]
+where $A_\sigma$ is the $0$--$1$ feature-evaluation matrix with row
+$\chi_k(x,\sigma(x))$ and $d$ columns.  Put
+$r=\operatorname{rank}(A_\sigma)\le d<2^n$.
+Choose $r$ independent columns $C$ and $r$ rows $R$ on which their minor is
+nonzero, and choose a row index $j\notin R$.
+
+Adjoin $v(z)=(1,z,\ldots,z^{2^n-1})^\mathsf T$ to those columns and take the
+minor on rows $R\cup\{j\}$.  Its determinant is a nonzero integer polynomial
+$P(z)$: the coefficient of $z^j$ is, up to sign, the nonzero minor on
+$R\times C$.  Every coefficient is an $r\times r$ determinant of a $0$--$1$
+matrix, so Hadamard's inequality bounds its magnitude by
+$r^{r/2}\le d^{d/2}$.  The leading nonzero coefficient has magnitude at least
+one, and the Cauchy root bound therefore places every complex root in
+$|z|\le1+d^{d/2}<B$.  Hence $P(B)\ne0$, contradicting
+$v(B)\in\operatorname{col}(A_\sigma)$.  Thus
+$\operatorname{aux}_k(f)>\ell$, and
+Theorem~\ref{thm:zero-temperature} finishes the proof.
+\end{proof}
 
 \medskip
 \printbibliography

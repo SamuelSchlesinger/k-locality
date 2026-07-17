@@ -21,6 +21,19 @@ if one supplies the local-verification reduction as a bridge hypothesis, then
 open Cslib
 open Cslib.Circuits
 
+/-- Boolean gate operations with an explicitly bounded input count.
+
+The cslib revision used by this project exposes generic circuits and bases but does not
+provide the paper's `BoundedFanInOp` wrapper, so we define the small wrapper locally. -/
+structure BoundedFanInOp (r : Nat) where
+  inputCount : Nat
+  inputCount_le : inputCount ≤ r
+  fn : List Bool → Bool
+
+instance {r : Nat} : Basis (BoundedFanInOp r) where
+  arity op := .exactly op.inputCount
+  eval op inputs _ := op.fn inputs
+
 noncomputable def uniformInput (m : Nat) : Distribution (BitVec m) :=
   PMF.uniformOfFintype (BitVec m)
 
@@ -88,6 +101,27 @@ theorem CComplexity_le_of_recognizer
 def Generates (r m n : Nat) (C : MultiOutputCircuit (BoundedFanInOp r) m n)
     (D : Distribution (BitVec n)) : Prop :=
   (uniformInput m).map C.eval = D
+
+/-- An exact generator has visible support equal to the range of its circuit map. -/
+theorem support_eq_range_of_generates
+    {r m n : Nat} {D : Distribution (BitVec n)}
+    (C : MultiOutputCircuit (BoundedFanInOp r) m n)
+    (hGen : Generates r m n C D) :
+    D.support = Set.range C.eval := by
+  rw [← hGen, PMF.support_map]
+  unfold uniformInput
+  rw [PMF.support_uniformOfFintype]
+  change C.eval '' Set.univ = Set.range C.eval
+  exact Set.image_univ
+
+/-- Membership in the support of an exactly generated law has a seed witness. -/
+theorem mem_support_iff_exists_seed_of_generates
+    {r m n : Nat} {D : Distribution (BitVec n)}
+    (C : MultiOutputCircuit (BoundedFanInOp r) m n)
+    (hGen : Generates r m n C D) (x : BitVec n) :
+    x ∈ D.support ↔ ∃ seed : BitVec m, C.eval seed = x := by
+  rw [support_eq_range_of_generates C hGen]
+  rfl
 
 def GeneratorWitness (r n : Nat) (D : Distribution (BitVec n)) (t : Nat) : Prop :=
   ∃ m : Nat, ∃ C : MultiOutputCircuit (BoundedFanInOp r) m n,

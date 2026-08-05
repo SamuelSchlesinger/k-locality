@@ -14,6 +14,7 @@
 \addbibresource{bibliography.bib}
 
 \newcommand{\LC}{\mathcal{L}}
+\newcommand{\GRed}{\operatorname{GRed}}
 \newcommand{\supp}{\operatorname{supp}}
 \newcommand{\NSize}{\operatorname{NSize}}
 \newcommand{\ndeg}{\operatorname{ndeg}}
@@ -45,26 +46,29 @@
 
 \begin{abstract}
 We study the minimum number of binary latent variables needed to realize a
-distribution as the observed marginal of a bounded-order maximum-entropy model.
-The resulting $k$-localization complexity $\LC_k(D)$ is a hidden-variable
-extension complexity for the closure of the order-$k$ hierarchical
-exponential family.  For every fixed $k$, we determine its worst-case scale up
-to constants depending only on $k$:
+distribution as the observed marginal of the topological closure of a fully
+connected, bounded-order hierarchical exponential family.  The resulting
+$k$-localization complexity $\LC_k(D)$ charges only latent coordinates:
+interaction coefficients may be arbitrary reals, hidden variables may
+interact with one another, and the lifted joint law may lie on a boundary
+face.  For every fixed $k$, we determine the worst-case scale up to constants
+depending only on $k$:
 \[
   \max_{D\text{ on }\{0,1\}^n}\LC_k(D)=\Theta_k(2^{n/k}).
 \]
 The upper bound is an exposed block-feature graph preserving the complete
-probability table; the lower bound is a boundary-uniform marginal-variety
-obstruction.  This exponent is also nontrivial inside the exchangeable class:
-every exchangeable law has $\LC_k(D)=O_k(n^{1/k})$, whereas the fixed
-full-support law
+probability table; the lower bound is a projective marginal-variety
+obstruction that includes every boundary lift.  Our principal structured
+example lies in the exchangeable class: every exchangeable law has
+$\LC_k(D)=O_k(n^{1/k})$, whereas the full-support target law at inverse
+temperature one
 \[
   D_n(x)\propto
   \exp\!\left(-2^{|x|/2^{\lfloor\log_2(n+1)\rfloor}}\right)
 \]
 has $\LC_k(D_n)=\Theta_k(n^{1/k})$ and likelihood ratio below $e^3$.
 Thus a closed-form, uniformly conditioned law attains the worst exchangeable
-scale at fixed temperature.
+scale even though the competing lifted models may use boundary faces.
 
 The marginal obstruction yields exact polynomial certificates and effective
 hard rational Gibbs rays.  A complementary theorem transfers arbitrary
@@ -73,16 +77,12 @@ degree-reduction lower bounds to full-support laws:
   \liminf_{t\downarrow0}\LC_k(D_{f,t})
   \ge \operatorname{aux}_k(f).
 \]
-Its arbitrary-face proof uses closedness of a finite tropical image.  For
-dense rational tables of bit length $L$, facial stratification also gives
-exact recognition in time $L^{O_{k,c}(\log^kL)}$ when $\ell\le cn$, with a
-sharper exponent at fixed $\ell$ and full support; ordinary NP-hardness in this
-dense model would contradict ETH.
-
-Finally, support faces yield two-way comparisons with deterministic and
-nondeterministic circuits.  These are barrier theorems, not new circuit lower
-bounds: the unconditional structured separations above are carried by the
-weights of full-support laws.
+Its arbitrary-face proof uses closedness of a finite tropical image.
+Secondary results give exact quasipolynomial recognition for dense rational
+tables and two-way support comparisons with deterministic and
+nondeterministic circuits.  These are algorithmic and barrier theorems, not
+new circuit lower bounds: the structured separation above is carried by the
+weights of a full-support law.
 \end{abstract}
 
 \section{Introduction}
@@ -96,6 +96,15 @@ bounded-order maximum-entropy model.  Equivalently, we ask for the smallest
 Boolean extension on which both the support and the relative log weights of a
 table are described by interactions of order at most $k$.
 
+Throughout, the ambient interaction hypergraph is complete and the model is
+its topological closure.  We count latent bits rather than parameters or
+coefficient precision, allow hidden--hidden interactions, and permit a
+full-support visible law to be represented by a boundary joint law.  Thus
+$\LC_2$ is not restricted-Boltzmann-machine complexity, and ``fixed
+temperature'' below refers to the target visible family rather than to an
+interior finite-parameter lift.  Section~\ref{sec:locality} gives the precise
+definition and resource convention.
+
 The boundary of the exponential family is essential.  A local model may have
 zeros even when none of its individual marginal cells vanishes.  The correct
 global object is the face of the $k$-marginal polytope containing the moment
@@ -103,6 +112,14 @@ vector: an exposing functional is a nonnegative degree-$k$ energy whose ground
 space is exactly the support, while a second degree-$k$ potential controls all
 positive weights on that face.  This face--Gibbs description lets us treat
 hidden-variable representations uniformly across positive and boundary laws.
+
+The same description gives a compositional reduction calculus.  A source
+distribution may be used as a free base measure, after which bounded-order
+Gibbs factors add fresh coordinates and the target is read from designated
+coordinates.  The resulting Gibbs-reduction cost composes additively, while
+the cost from the zero-variable law to $D$ is exactly
+$n+\LC_k(D)$.  Facial conditioning and circuit-trace constructions are two
+instances of this calculus.
 
 Our central question is quantitative: how many hidden bits are necessary in
 the worst case, and can the obstruction be witnessed by a structured law
@@ -122,20 +139,20 @@ Boolean-circuit barrier.  Full-support laws avoid that barrier because their
 support recognizer is trivial and their complexity lies entirely in the
 weights.
 
-Our contributions are as follows.
+The primary theorem chain is as follows.
 \begin{itemize}
-  \item \emph{Worst-case and structured full-support bounds.}
+  \item \emph{Sharp extension scales and a structured hard law.}
   We determine the worst-case and almost-everywhere scale as
   $\Theta_k(2^{n/k})$.  The upper construction exposes a feature graph and
   preserves the complete probability table, not merely an objective or its
   minimizers.  The lower bound uses one projective marginal variety containing
   the images of all lifted support faces.  Inside the exchangeable class we
-  prove the sharp scale $\Theta_k(n^{1/k})$ and exhibit a fixed-temperature,
-  uniformly conditioned closed-form family attaining it
+  prove the sharp scale $\Theta_k(n^{1/k})$ and exhibit a uniformly
+  conditioned closed-form target at inverse temperature one attaining it
   (Theorems~\ref{thm:universal-lift} and~\ref{thm:generic-positive},
   Corollary~\ref{cor:worst-case}, and
   Theorem~\ref{thm:exchangeable-window}).
-  \item \emph{Certificates and transfer.}
+  \item \emph{Algebraic certificates and tropical transfer.}
   The marginal ideal supplies exact hidden-bit lower-bound certificates and
   computable hard rational Gibbs rays with effective cold intervals.  The
   zero-temperature theorem imports any unrestricted
@@ -145,7 +162,11 @@ Our contributions are as follows.
   (Theorems~\ref{thm:algebraic-certificate} and~\ref{thm:zero-temperature},
   Corollaries~\ref{cor:effective-tables}, \ref{cor:noisy-parity},
   and~\ref{cor:superincreasing}).
-  \item \emph{Exact recognition.}
+\end{itemize}
+Two groups of consequences locate the measure algorithmically and
+complexity-theoretically.
+\begin{itemize}
+  \item \emph{Exact dense-table recognition.}
   For dense exact rational tables, face enumeration gives deterministic
   quasipolynomial recognition for every linear latent budget, with a sharper
   exponent for fixed-budget full-support tables; the zero-latent case is in
@@ -154,7 +175,7 @@ Our contributions are as follows.
   (Theorems~\ref{thm:qp-recognition} and~\ref{thm:full-support-recognition},
   Proposition~\ref{prop:zero-latent-p},
   Corollary~\ref{cor:recognition-eth}).
-  \item \emph{The support contrast.}
+  \item \emph{The support and circuit boundary.}
   Quadratic NAND synthesis maps circuit traces to localizations, while exposed
   faces compile back into nondeterministic support circuits.  This gives a
   static two-way simulation and a circuit barrier, not a new circuit lower
@@ -174,6 +195,18 @@ transcendental probabilities despite its succinct closed form.  The dense
 rational recognition algorithms concern a separate explicit-table input
 model.  We keep these three regimes distinct throughout.
 
+\paragraph{Artifact and verification status.}
+The accompanying repository contains Lean proofs of the local-verification
+and ground-state machinery, the boundary counterexample, and the
+constants-aware NAND-recognizer localization with exact latent-bit
+accounting.  It also contains finite exhaustive or exact-arithmetic checks for
+the block lift, exchangeable construction, selector examples, and
+full-support recognition reduction.  These checks do not machine-verify the
+principal block-lift, marginal-variety, zero-temperature, exchangeable, or
+recognition theorems, which remain manuscript proofs.  The file
+\texttt{VERIFICATION.md} records the theorem-by-theorem boundary and the
+reproducible commands.
+
 \paragraph{Novelty boundary.}
 The face characterization is standard finite exponential-family geometry
 \cite{rauh11,malago11}; block dictionaries and objective quadratization are
@@ -184,7 +217,7 @@ exponent, the two-way static support formulation, the
 budget-indexed localization consequence of marginal ideals and its effective
 base-coded escaping ray, the closed-face tropical argument that turns
 marginalization into the stated auxiliary-complexity lower-bound transfer, and
-the fixed-temperature Eisenstein--Lindemann obstruction inside the
+the inverse-temperature-one Eisenstein--Lindemann obstruction inside the
 exchangeable class, together with face-stratified quasipolynomial exact
 recognition.
 Table~\ref{tab:framework-comparison} summarizes these boundaries; detailed
@@ -304,7 +337,8 @@ recognition.  It is a circuit barrier, not a new circuit lower bound.
 \paragraph{Organization.}
 Section~\ref{sec:locality} defines marginal models, $k$-locality, and
 $\LC_k$, and proves universal existence.  Section~\ref{sec:polytopes} develops
-the face--Gibbs geometry that the rest of the paper uses.
+the face--Gibbs geometry and the relative Gibbs-reduction calculus that the
+rest of the paper uses.
 Section~\ref{sec:universal-lifts} proves the universal block-feature upper
 bound.  Section~\ref{sec:algebraic-certificates} turns the dimension
 obstruction into computable certificates with explicit degrees and effective
@@ -532,6 +566,165 @@ such that $E(y)\ge0$ on $\bits^N$ and
 Use an affine functional exposing the face in
 Theorem~\ref{thm:face-gibbs} and compose it with $\chi_k$.
 \end{proof}
+
+\subsection{Relative localization and Gibbs reductions}
+\label{sec:gibbs-reductions}
+
+The face--Gibbs form also gives a notion of reduction between distributions.
+The source law contributes its entire probability table as a base measure;
+only coordinates introduced after that source are charged.
+
+\begin{definition}[$k$-Gibbs reduction]
+\label{def:gibbs-reduction}
+Let $P$ be a distribution on $\bits^I$ and let $D$ be a distribution on
+$\bits^J$, where $I$ and $J$ are finite coordinate sets.  A relative
+$k$-Gibbs extension of $P$ consists of a finite fresh coordinate set $A$
+disjoint from $I$, multilinear polynomials $E,\theta$ on
+$\bits^{I\sqcup A}$ of degree at most $k$, and the distribution
+\[
+  R(y,a)=\frac{1}{Z}
+  P(y)\,\mathbf 1_{\{E(y,a)=0\}}\exp(\theta(y,a)),
+  \tag{GR}\label{eq:gibbs-reduction}
+\]
+where $E\ge0$ on the Boolean cube and the normalizing constant $Z$ is
+positive.  A $k$-Gibbs reduction from $P$ to $D$ additionally specifies an
+injection $\iota:J\hookrightarrow I\sqcup A$ such that $D$ is the pushforward
+of $R$ under the coordinate projection
+$\pi_\iota(z)_j=z_{\iota(j)}$.
+
+The cost of the reduction is $|A|$, including both fresh output coordinates
+and fresh coordinates that are marginalized out.  We write
+\[
+  \GRed_k(P\mathbin{\to}D)
+\]
+for the minimum cost.  Source coordinates are never charged, even when they
+are not designated as target coordinates and therefore act as latent
+variables for $D$.
+\end{definition}
+
+In the common disjoint-output form, $P$ is on $m$ source bits, the $n$ target
+bits $X$ and $\ell$ workspace bits $H$ are fresh, and
+\eqref{eq:gibbs-reduction} says
+\[
+  D(x)=\frac{1}{Z}
+  \sum_{y\in\bits^m}\sum_{h\in\bits^\ell}
+  P(y)\,\mathbf 1_{\{E(y,x,h)=0\}}\exp(\theta(y,x,h)).
+  \tag{GR$'$}\label{eq:gibbs-reduction-disjoint}
+\]
+This reduction has cost $n+\ell$; its hidden overhead relative to the free
+source is $\ell$.
+
+\begin{remark}[Weight access, not sample access]
+The source marginal of $R$ in \eqref{eq:gibbs-reduction} need not equal $P$:
+the local Gibbs factor
+may reweight source states.  Thus this is a projective reduction with access
+to the weights of $P$, not a claim that one sample from $P$ is transformed by
+a stochastic channel.  It inherits the nonuniform convention of $\LC_k$;
+uniform reductions, bounded coefficient descriptions, oracle copies, and
+approximate sample conversion are separate refinements.
+\end{remark}
+
+Let $\mathbf 1$ denote the unique distribution on the zero-coordinate cube.
+The fresh-coordinate convention makes Gibbs reductions compositional and
+recovers localization complexity as the absolute special case.
+
+\begin{proposition}[Gibbs-reduction calculus]
+\label{prop:gibbs-reduction-calculus}
+For $k\ge2$ and finite Boolean distributions $P,D,R$:
+\begin{enumerate}
+  \item $\GRed_k(P\mathbin{\to}P)=0$;
+  \item
+  \[
+    \GRed_k(P\mathbin{\to}R)
+    \le
+    \GRed_k(P\mathbin{\to}D)
+    +\GRed_k(D\mathbin{\to}R);
+    \tag{Comp}\label{eq:gibbs-composition}
+  \]
+  \item if $D$ is on $n$ bits, then
+  \[
+    \GRed_k(\mathbf 1\mathbin{\to}D)=n+\LC_k(D);
+    \tag{Abs}\label{eq:gibbs-absolute}
+  \]
+  \item reductions tensor in parallel:
+  \[
+    \GRed_k(P_1\otimes P_2\mathbin{\to}D_1\otimes D_2)
+    \le
+    \GRed_k(P_1\mathbin{\to}D_1)
+    +\GRed_k(P_2\mathbin{\to}D_2).
+    \tag{Ten}\label{eq:gibbs-tensor}
+  \]
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+For the identity, introduce no fresh coordinates, take $E=\theta=0$, and
+designate every source coordinate as an output coordinate.
+
+For composition, make the fresh coordinate sets $A$ and $B$ of the two
+reductions disjoint.  Substitute the designated output coordinates of the
+first reduction for the source coordinates of the second.  If their Gibbs
+data are $(E_1,\theta_1)$ and $(E_2,\theta_2)$, use
+\[
+  E=E_1+E_2,
+  \qquad
+  \theta=\theta_1+\theta_2
+\]
+after this coordinate substitution.  Both summands of $E$ are nonnegative,
+so its zero set is the intersection of the two relative support conditions;
+degree does not increase.  Marginalizing the first extension over each of its
+designated output fibers produces $D$, after which the second Gibbs factor
+produces $R$.  Equivalently, this is associativity of the two finite sums in
+\eqref{eq:gibbs-reduction-disjoint}.  The composite introduces exactly the
+coordinates in $A\sqcup B$, which proves
+\eqref{eq:gibbs-composition}.
+
+For \eqref{eq:gibbs-absolute}, a reduction from $\mathbf 1$ of cost $r$ is an
+ordinary $k$-local distribution on its $r$ fresh coordinates by
+Theorem~\ref{thm:face-gibbs}.  Its $n$ designated coordinates have marginal
+$D$, so the other $r-n$ coordinates give a $k$-localization and
+$n+\LC_k(D)\le r$.  Conversely, apply the face--Gibbs form to an optimal
+$k$-localization of $D$ and introduce its $n+\LC_k(D)$ total coordinates as
+fresh coordinates.  This gives the reverse inequality.  Finally, placing two
+reductions on disjoint coordinates and adding their exposing energies and
+potentials proves \eqref{eq:gibbs-tensor}.
+\end{proof}
+
+\begin{corollary}[Compiling a source distribution]
+\label{cor:gibbs-reduction-compilation}
+If $P$ is on $m$ bits and $D$ is on $n$ bits, then
+\[
+  n+\LC_k(D)
+  \le
+  m+\LC_k(P)+\GRed_k(P\mathbin{\to}D).
+  \tag{Sub}\label{eq:gibbs-compilation}
+\]
+In particular, a disjoint-output reduction of the form
+\eqref{eq:gibbs-reduction-disjoint} with $\ell$
+workspace bits gives
+\[
+  \LC_k(D)\le m+\LC_k(P)+\ell.
+\]
+\end{corollary}
+
+\begin{proof}
+Compose an optimal reduction from $\mathbf 1$ to $P$ with an optimal reduction
+from $P$ to $D$, then apply \eqref{eq:gibbs-composition} and
+\eqref{eq:gibbs-absolute}.
+\end{proof}
+
+Two operations used later are already Gibbs reductions.  If $C$ is exposed by
+a nonnegative degree-at-most-$k$ polynomial and $P(C)>0$, multiplying $P$ by
+$\mathbf 1_C$ and renormalizing gives
+\[
+  \GRed_k(P\mathbin{\to}P(\mathord\cdot\mid C))=0.
+\]
+Thus Lemma~\ref{lem:facial-conditioning} is monotonicity under a zero-cost
+reduction on the same coordinates.  Likewise, a circuit generator is a Gibbs
+reduction from its uniform seed law: the fresh trace and output-copy bits are
+exposed by the sum of the gate and equality penalties.  Compiling the uniform
+source via Corollary~\ref{cor:gibbs-reduction-compilation} recovers the bounds
+in Theorem~\ref{thm:upper-bounds} and its quadratic NAND specialization.
 
 \subsection{A boundary caution}
 
@@ -1212,9 +1405,11 @@ that every lower bound on the unrestricted quantity $\operatorname{aux}_k(f)$,
 with no arithmetic restriction on $f$, now yields a distributional lower bound
 without any support complexity.
 
-The next result gives a fixed-temperature, well-conditioned lower bound inside
-one of the most classical structured classes of distributions.  Call $D$ on
-$\bits^n$ \emph{exchangeable} if $D(x)$ depends only on $|x|$.
+The next result gives a well-conditioned lower bound for a target family at
+visible inverse temperature one, even though localization is measured against
+the full closure and may use boundary joint lifts.  It lies inside one of the
+most classical structured classes of distributions.  Call $D$ on $\bits^n$
+\emph{exchangeable} if $D(x)$ depends only on $|x|$.
 
 \begin{lemma}[Facial conditioning]
 \label{lem:facial-conditioning}
@@ -1443,7 +1638,7 @@ quadratization of Boros, Crama, and Rodr\'iguez-Heck
 extension.  The block identification follows Anthony, Boros, Crama, and
 Gruber \cite[Lemma~5.1]{anthony16}.  The new ingredients are facial
 conditioning, the Eisenstein--Lindemann specialization, and the resulting
-fixed-temperature localization lower bound.
+inverse-temperature-one target-law localization lower bound.
 
 \section{Dense-table recognition}
 \label{sec:recognition}
@@ -2320,17 +2515,17 @@ every nonminimal value.  Structured constructions can transfer when their
 minimizing witness is unique: the even-$n$ parity construction of
 \cite{bcrh20}, together with the corrected odd-$n$ construction in
 Proposition~\ref{prop:parity}, yields an exact localization.  The correction is
-% TODO(sam): the failure of (27) at x=1^n is verified against the authors'
-% open-access version (orbi.uliege.be/handle/2268/229971, Theorem 11 and
-% formulas (26)-(27)); confirm that the published JoCO version uses the same
-% numbering before submission, and consider a courtesy note to the authors.
-necessary because the printed odd-$n$ formula~(27) of \cite{bcrh20} fails at
-$x=1^n$.  With $L=\lceil\log_2 n\rceil$, its squared bracket there is
+necessary because the odd-$n$ formula~(27) in the authors' open-access version
+of \cite[Theorem~11]{bcrh20} fails at $x=1^n$.  With
+$L=\lceil\log_2 n\rceil$, the quantity inside its square is
 \[
   2^L-\sum_{j=1}^{L-1}2^j h_j\ge2,
 \]
-although odd parity requires minimum zero.  Their lower bound and even-$n$
-formula~(26) are unaffected.
+so the displayed square is at least $4$, although their parity convention
+requires minimum zero on this odd-weight input.  Their lower bound and
+even-$n$ formula~(26) are unaffected.  The odd-$n$ construction used in
+Proposition~\ref{prop:parity} is proved directly and is not attributed to
+formula~(27).
 Degree-reduction reformulations with an arbitrary target degree have also been
 studied for polynomial optimization \cite{gonzalez25}.  They motivate the
 order-$k$ comparison, but use equality-constrained program reformulations
@@ -2361,7 +2556,7 @@ concrete next tests.
   \item \textbf{Larger hierarchy gaps.}  Proposition~\ref{prop:hierarchy}
   separates every adjacent pair, but only by one latent bit.  Determine how
   large $\LC_k(D)-\LC_{k+1}(D)$ can be for explicit distributions.
-  \item \textbf{Arithmetic robustness at fixed temperature.}
+  \item \textbf{Arithmetic robustness of the target family.}
   Theorem~\ref{thm:exchangeable-window} gives a uniformly conditioned
   $\Theta_k(n^{1/k})$ family at inverse temperature one, but its probabilities
   are transcendental.  Find an equally transparent rational or bounded-precision
@@ -2402,27 +2597,32 @@ concrete next tests.
 
 Local marginal data can force global support through an exposed face even when
 no local pattern is individually forbidden.  Viewing the model as a
-hidden-variable extension of an extended exponential family makes the bridge
-to complexity theory precise: circuits yield local ground spaces, and local
-ground spaces yield nondeterministic circuits.  The lower-bound theory now has
-four distinct forms: filtered witness slices and selector moment duality for
-supports, a sign-definite polynomial relaxation, marginal ideals for exact
-weight certificates, and zero-temperature transfer from degree reduction.
-Together with the balanced feature lift they determine the worst-case scale.
-The same facial stratification gives quasipolynomial exact recognition from a
-dense rational table and an ETH barrier to ordinary hardness, while full
-support removes one power of $\log L$ from the exponent at fixed latent budget.
-They give a closed-form analytic fixed-temperature exchangeable family at the
-tight $\Theta_k(n^{1/k})$ structured scale and with likelihood ratio below $e^3$, a
-computable optimal-scale family with effective cold intervals, and a
-closed-form superincreasing ray whose hard tail remains existential.
-Quadratic NAND synthesis draws the boundary sharply: a strong uniform-support
-localization lower bound would already be a deterministic Boolean-circuit
-lower bound, and a ground-state-extension lower bound would lower-bound
-nondeterministic verifiers.  None of the full-support separations lower-bounds
-a support circuit.  The main remaining lower-bound targets are a rational or
-finite-precision analogue of the exchangeable separation and an explicit
-support family strong enough to cross the corresponding circuit barrier.
+hidden-variable extension of the closure of a hierarchical exponential family
+makes the resource precise.  The balanced feature graph and the boundary-safe
+marginal variety determine the worst-case scale
+$\Theta_k(2^{n/k})$.  Facial conditioning and algebraic independence then give
+a closed-form, full-support exchangeable target at inverse temperature one
+with the tight structured scale $\Theta_k(n^{1/k})$ and likelihood ratio below
+$e^3$.  Marginal ideals turn the dimension obstruction into exact
+certificates, while the zero-temperature theorem transfers unrestricted
+degree-reduction lower bounds to full-support Gibbs rays.
+
+Relative Gibbs reductions organize these constructions compositionally: a
+source probability table serves as a free base measure, fresh local Gibbs
+coordinates carry a cost, and $n+\LC_k(D)$ is exactly the cost from the
+zero-variable law to $D$.  In this language, facial conditioning is a
+zero-cost reduction and circuit traces are reductions from uniform seed laws.
+
+The recognition and circuit results locate this extension measure rather than
+drive its principal separation.  Facial stratification gives
+quasipolynomial exact recognition for dense rational tables and an ETH barrier
+to ordinary hardness in that input model.  Quadratic NAND synthesis and the
+reverse support compilation show that a strong uniform-support lower bound
+would already cross a Boolean-circuit barrier; the full-support weighted
+examples avoid that implication.  The main remaining targets are a rational
+or finite-precision analogue of the exchangeable family, a separation between
+interior and closure localization, and an explicit support family strong
+enough to cross the circuit barrier.
 
 \appendix
 

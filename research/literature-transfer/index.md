@@ -64,13 +64,14 @@ measured by hidden bits rather than parameters.
    block-layer supports, the one-block complexity is exact and the direct sum
    is exact under block-symmetric slices; the unrestricted direct sum remains
    open and subject to the NAND-circuit barrier.
-8. The explicit exchangeable law
+8. The explicit exchangeable target law at inverse temperature one
    `D_n(x) proportional to exp(-2^(|x|/r_n))`, where
    `r_n=2^floor(log_2(n+1))`, has
    `L_k(D_n)=Theta_k(n^(1/k))` for every fixed `k>=2` even though
-   `max D_n/min D_n<e^3`.  This fixed-temperature theorem combines a
+   `max D_n/min D_n<e^3`.  This target-law theorem combines a
    quadratically exposed binary-weight copy, an Eisenstein power basis,
-   Lindemann--Weierstrass, and the boundary-safe marginal ideal.  The
+   Lindemann--Weierstrass, and the boundary-safe marginal ideal; competing
+   localizations may still use boundary joint lifts.  The
    zero-temperature transfer also extends from integer to arbitrary real
    objectives by closedness of a finite selector-minimum image.
 9. The projective marginal ideal is a boundary-safe invariant: nonvanishing of

@@ -44,7 +44,14 @@ Sun. “Weights of Exact Threshold Functions.” *Izvestiya: Mathematics* 85(6)
 Endre Boros, Yves Crama, and Elisabeth Rodríguez-Heck.
 “Compact Quadratizations for Pseudo-Boolean Functions.”
 *Journal of Combinatorial Optimization* 39 (2020), 687–707.
-[DOI 10.1007/s10878-019-00511-0](https://doi.org/10.1007/s10878-019-00511-0).
+[DOI 10.1007/s10878-019-00511-0](https://doi.org/10.1007/s10878-019-00511-0);
+[authors' open-access version](https://orbi.uliege.be/bitstream/2268/229971/1/article_quadrat_bounds%20ORBI.pdf).
+
+Source note: Theorem 11 and formulas (26)--(27) were checked against the
+open-access version on 2026-08-05.  Its odd-`n` formula (27) fails at
+`x=1^n`: the quantity inside the square is at least two for every witness.
+The paper therefore uses its own directly proved odd-`n` construction and
+attributes only the unaffected even-`n` formula (26) to this source.
 
 <a id="basu06"></a>
 ## basu06

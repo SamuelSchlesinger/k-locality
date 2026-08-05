@@ -2,75 +2,77 @@
 
 This repository contains the paper **"Localization Complexity of Hidden-Variable Gibbs Models"** by Samuel Schlesinger and Joshua Grochow.
 
-## Scope
+## Model convention
 
-The revived draft focuses on:
+`L_k(D)` counts binary latent coordinates only.  The lifted law belongs to the
+topological closure of the fully connected order-at-most-`k` hierarchical
+exponential family: coefficients may be arbitrary reals, hidden variables may
+interact with one another, and the joint law may lie on a boundary face even
+when `D` has full support.  In particular, `L_2` is not restricted-Boltzmann-
+machine hidden-unit complexity, and it is not a coefficient-bounded or
+finite-precision resource.
 
-- Core definitions: marginal models, *k*-local distributions, *k*-localizations, and localization complexity `L_k(D)`.
-- A **face--Gibbs characterization**: the support of a *k*-local distribution is the ground-state set of a degree-*k* pseudo-Boolean Hamiltonian.
-- The original **local verification theorem** and two circuit-to-localization upper bounds:
-  - `L_k(D) <= G_{k-1}(D)` (generator complexity),
-  - `L_k(D) <= C_{k-1}(S)` for flat `D` on support `S`.
-- A sharper **quadratic NAND synthesis**:
-  `L_2(U_S) <= C_NAND(S)`, with exact generator and unambiguous-verifier
-  variants.  Thus a quadratic lower bound for a flat support is already an
-  ordinary circuit lower bound (up to the constant choice of gate basis).
-- An unconditional converse from a small localization to a nondeterministic circuit for the visible support.
-- A support-only lower-bound invariant: the ground-state extension complexity
-  `GSE_k(S)`, its facial-cover relaxation, and an exact characterization by a
-  filtered real Reed--Muller family of witness slices.  A Shannon count gives
-  `GSE_k(S) = Omega_k(2^(n/(k+1)))` for almost every support.
-- A sign-sensitive polynomial lower bound
-  `ndeg_+(complement(supp(D))) <= k * 2^L_k(D)`, the exact identity
-  `L_2(U_even) = ceil(log_2 n)-1`, and matching `log_2(n)+O_k(1)` behavior for
-  every fixed `k`.
-- A universal balanced-block feature lift
-  `L_k(D)=O_k(2^(n/k))` for every distribution and fixed `k>=2`, matched by
-  the generic full-support lower bound.
-- A boundary-safe algebraic lower-bound method: nonvanishing polynomials in a
-  computable marginal ideal certify `L_k(D)>ell`, yielding effectively
-  constructible rational hard tables at the optimal scale.
-- A zero-temperature transfer from degree-`k` pseudo-Boolean auxiliary
-  complexity to full-support localization complexity for arbitrary real
-  objectives, using closedness of a finite tropical image; noisy parity and
-  explicit superincreasing Gibbs rays are applications.
-- A sharp exchangeable theory: every exchangeable law has
-  `L_k(D)=O_k(n^(1/k))`, while the closed-form full-support family
-  `D_n(x) proportional to exp(-2^(|x|/r_n))`,
+The manuscript uses “fixed temperature” only for a target visible family.
+Competing localizations are still allowed to use boundary joint lifts.
+
+## Gibbs reductions
+
+A `k`-Gibbs reduction uses a source distribution as a free base measure,
+multiplies it by an order-at-most-`k` Gibbs factor on the source and fresh
+coordinates, and reads the target from designated coordinates.  Its cost is
+the number of fresh coordinates.  These reductions compose additively, and
+the cost from the zero-variable distribution to an `n`-bit law `D` is exactly
+`n + L_k(D)`.  Facial conditioning and the circuit-trace constructions are
+instances of this calculus.
+
+This is projective access to the source's probability weights, not a
+sample-preserving stochastic channel.  Like `L_k`, the reduction notion is
+nonuniform unless coefficient descriptions and construction algorithms are
+separately bounded.
+
+## Main results
+
+- **Sharp worst-case scale.**  A balanced block-feature graph gives
+  `L_k(D)=O_k(2^(n/k))` for every distribution.  A boundary-safe projective
+  marginal-variety obstruction gives the matching generic full-support lower
+  bound, so the worst-case and almost-everywhere scale is
+  `Theta_k(2^(n/k))`.
+- **Structured full-support lower bound.**  Every exchangeable law satisfies
+  `L_k(D)=O_k(n^(1/k))`, while
+  `D_n(x) proportional to exp(-2^(|x|/r_n))`, with
   `r_n=2^floor(log_2(n+1))`, has `L_k(D_n)=Theta_k(n^(1/k))` and likelihood
   ratio below `e^3`.
-- Deterministic quasipolynomial recognition from dense exact rational tables:
-  `L^{O_(k,c)(log^k L)}` for `ell<=cn`, with the sharper
-  `L^{O_(k,ell)(log^(k-1) L)}` bound for full-support tables at fixed latent
-  budget.  Under ETH, these bounds exclude ordinary polynomial-output
-  NP-hardness reductions in the dense-table model.
-- A strict adjacent hierarchy: for every `k >= 3`, an explicit flat distribution
-  has `L_k = 1` and `L_(k+1) = 0`.
-- A full-support theory: an explicit one-hidden-bit adjacent hierarchy for every
-  `k >= 2`, the generic lower bound `L_k(D) >= Omega_k(2^(n/k)) - n`, and
-  both well-conditioned structured lower bounds and computable optimal-scale
-  cold Gibbs rays.
-- A reinterpretation of the interior-feasibility counterexample: it refutes local support intersection, but its global zeros are exposed by a quadratic energy.
-- A Razborov--Rudich natural-proofs barrier for the support program: any
-  efficiently computable, large property certifying superpolynomial
-  `GSE_2(S)` is a natural property useful against `P/poly`; largeness is
-  automatic at the generic scale, so the barrier prices constructivity alone.
-- An extended-formulations comparison: latent class models embed at
-  logarithmic interaction order, rectangle and common-information lower
-  bounds do not descend to `LC_2` (they do constrain RBMs), and a
-  slack-matrix-style factorization theorem for marginal-polytope faces is
-  posed as an open problem.
-- An interior localization complexity `LC_k^int(D) >= LC_k(D)` for
-  full-support laws, with a conjectured strict separation ("boundary lifts
-  help"), the localization analogue of rank versus border rank.
-- Explicit marginal-ideal certificate degrees: below the halved dimension
-  threshold `d_k(n+ell) <= 2^(n-1)`, a certificate of degree `2^(2n+2)`
-  exists and is computable by exact rational linear algebra.
+- **Certificates and transfer.**  Marginal ideals give exact hidden-budget
+  certificates and effective rational hard Gibbs rays.  A closed tropical
+  image proves the zero-temperature lower-bound transfer from unrestricted
+  degree-`k` pseudo-Boolean auxiliary complexity.
 
-`REVIVAL.md` records the commit-by-commit audit, the repaired proof route, novelty boundaries, and formalization gates.
-`INVARIANTS.md` develops the exact filtered-slice invariant and further
-relaxations beyond the marginal ideal and zero-temperature methods, including
-common-leading-form covers and quadratic ground-state zonotope dimension.
+## Secondary results and boundaries
+
+- Dense exact rational tables admit deterministic quasipolynomial recognition
+  for every linear latent budget, with a sharper exponent for fixed-budget
+  full-support tables and a polynomial-time zero-latent case.  Under ETH this
+  rules out ordinary polynomial-output NP-hardness reductions in the dense
+  input model.
+- Quadratic NAND traces give circuit-to-localization upper bounds, while every
+  exposed support face compiles back to a nondeterministic support circuit.
+  This yields circuit and natural-proofs barriers, not new circuit lower
+  bounds.  Full-support weighted lower bounds avoid those barriers.
+- The appendices develop `GSE_k`, filtered witness slices, facial covers,
+  sign-definite degree, exact parity localization, almost-all-support bounds,
+  and adjacent hierarchy separations.
+- Interior, coefficient-bounded, finite-precision, approximate, sampled, and
+  succinct-input versions remain separate open problems.
+
+## Repository map
+
+- `main.tex`: authoritative manuscript.
+- `VERIFICATION.md`: theorem-by-theorem evidence and reproducible checks.
+- `REVIVAL.md`: commit-history audit and the repair of the failed
+  support-intersection converse.
+- `INVARIANTS.md`: support invariants and further lower-bound routes.
+- `research/literature-transfer/`: primary-source transfer and novelty audit,
+  with finite validation programs under its `data/` directories.
 
 ## Building
 

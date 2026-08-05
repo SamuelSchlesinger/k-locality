@@ -6,7 +6,7 @@
 > nondeterministic degree with exact quadratic parity, an algebraic
 > marginal-ideal certificate with explicit linear-algebra degree bounds, a
 > zero-temperature transfer producing explicit full-support hard Gibbs rays, a
-> sharp fixed-temperature exchangeable theorem, exact dense-table recognition
+> sharp inverse-temperature-one exchangeable target theorem, exact dense-table recognition
 > algorithms with an ETH barrier, a Razborov--Rudich natural-proofs barrier
 > for the support program, an extended-formulations comparison (nonnegative
 > rank, slack matrices, psd rank), and the interior-versus-closure conjecture

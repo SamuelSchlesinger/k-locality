@@ -18,10 +18,13 @@ whose point-probability ratio is less than `e^3`, yet, for every fixed
 L_k(D_n) = Theta_k(n^(1/k)).                            (2)
 ```
 
-In particular, `L_2(D_n)=Theta(sqrt(n))`.  This is a fixed-temperature result:
-there is no ineffective cold threshold and no dimension-dependent condition
-number.  The energy is a smooth function of Hamming weight taking values in
-`[1,4)`, rather than a superincreasing encoding.
+In particular, `L_2(D_n)=Theta(sqrt(n))`.  The target law is evaluated at the
+fixed visible inverse temperature one: there is no ineffective cold threshold
+and no dimension-dependent condition number.  This terminology does not
+restrict the competing localizations to interior finite-parameter lifts; the
+lower bound is against the full closure, including boundary joint laws.  The
+energy is a smooth function of Hamming weight taking values in `[1,4)`, rather
+than a superincreasing encoding.
 
 The lower bound combines four exact facts:
 

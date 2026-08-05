@@ -337,11 +337,13 @@ allows hidden--hidden interactions.  Indeed, the later unrestricted parity
 construction uses only `ceil(log_2 n)-1` auxiliary bits, so a `y`-linear lower
 bound cannot lower-bound unrestricted `L_2`.
 
-There is a source-level correction in the odd-parity upper bound.  With the
-notation of [bcrh20][bcrh20], printed formula (27) fails for odd `n` at
-`x=1^n`: its square has inner value at least two for every encoded witness, so
-it cannot attain the required zero.  The lower bound in Theorem 5 and the
-even-`n` formula (26) are unaffected.  For odd `n`, if `pi_n` denotes the
+There is a source-level correction in the odd-parity upper bound.  Theorem 11
+and formulas (26)--(27) were rechecked on 2026-08-05 against the authors'
+open-access version linked in [bcrh20][bcrh20].  In that version formula (27)
+fails for odd `n` at `x=1^n`: the quantity inside its square is at least two
+for every encoded witness, so the square is at least four and cannot attain
+the required zero.  The lower bound in Theorem 5 and the even-`n` formula (26)
+are unaffected.  For odd `n`, if `pi_n` denotes the
 odd-parity indicator, put
 
 ```text

@@ -1,0 +1,599 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{microtype}
+
+\newcommand{\bits}{\{0,1\}}
+\newcommand{\LC}{\operatorname{LC}}
+\newcommand{\val}{\operatorname{val}}
+\newcommand{\supp}{\operatorname{supp}}
+
+\newtheorem{theorem}{Theorem}
+
+\title{Explicit Hard Distributions, Boolean Tilts, and the Circuit Frontier}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This note unpacks the explicit full-support rational distribution used in the
+Lean-checked exponential lower bound for cubic localization.  The distribution
+itself is elementary: order the points of a Boolean cube by their binary value,
+give them rapidly growing powers-of-powers weights, and normalize.  The point
+of the unusual weights is that products and then sums of products carry two
+independent layers of exact binary encoding.  The same collision can instead
+be separated by a two-level Boolean tilt, yielding an existential exponential
+NAND lower bound.  A structured block-parity subfamily goes further: Lean now
+constructs canonical finite-search witnesses giving a bounded-precision,
+quadratic-in-dimension cubic-localization lower bound.  The witnesses are
+astronomically expensive to find, so the usual efficient-explicitness barrier
+remains.
+\end{abstract}
+
+\section{The definition}
+
+Fix a natural number $m$ and put
+\[
+  n_m := 4m+24.
+\]
+Thus $D_m$ is a distribution on $n_m$ visible bits.  For
+$x=(x_0,\ldots,x_{n_m-1})\in\bits^{n_m}$, use the little-endian binary value
+\[
+  \val(x):=\sum_{i=0}^{n_m-1}x_i2^i
+  \quad\in\quad\{0,\ldots,2^{n_m}-1\}.
+\]
+Let
+\[
+  f:=(1,\ldots,1),
+  \qquad \val(f)=2^{n_m}-1,
+\]
+be the distinguished \emph{filler state}.  Define the unnormalized integer
+weight
+\[
+  W_m(x):=
+  \begin{cases}
+    1, & x=f,\\[2mm]
+    2^{\,2^{\val(x)}}, & x\ne f.
+  \end{cases}
+\]
+Finally, let
+\[
+  Z_m:=\sum_{y\in\bits^{n_m}}W_m(y),
+  \qquad
+  D_m(x):=\frac{W_m(x)}{Z_m}.
+\]
+Equivalently,
+\[
+  Z_m=1+\sum_{v=0}^{2^{n_m}-2}2^{2^v}.
+\]
+This is the whole definition.  Every $W_m(x)$ is a positive integer and
+$Z_m$ is a positive integer, so $D_m$ is an exact rational distribution with
+\[
+  \supp(D_m)=\bits^{n_m}.
+\]
+The index $m$ is only a scale parameter: it determines the dimension
+$n_m=4m+24$.  It is not a hidden variable and it does not index a mixture.
+
+\section{A tiny version of the table}
+
+The theorem starts at $n=24$, so its actual tables are already enormous.  To
+see the pattern, apply the same recipe on two bits.  Here
+$\val(x_0,x_1)=x_0+2x_1$, and the table is
+\[
+\begin{array}{ccccc}
+\toprule
+x_0 & x_1 & \val(x) & W(x) & D(x)\\
+\midrule
+0&0&0&2^{2^0}=2&2/23\\
+1&0&1&2^{2^1}=4&4/23\\
+0&1&2&2^{2^2}=16&16/23\\
+1&1&3&1&1/23\\
+\bottomrule
+\end{array}
+\]
+The non-filler weights begin
+\[
+  2,\ 4,\ 16,\ 256,\ 65536,\ldots,
+\]
+and satisfy $W(v+1)=W(v)^2$.  The all-ones state is deliberately reset to
+weight one so that it can be used to pad products without changing their
+unnormalized value.
+
+The distribution is consequently extremely skewed: almost all of its mass is
+on the last non-filler state.  Nevertheless every point has positive mass, so
+the lower bound comes entirely from the exact relative weights, not from a
+complicated support.
+
+\section{Why these weights are useful}
+
+Write
+\[
+  B:=2^n-1
+\]
+for the number of non-filler visible states in an $n$-bit version of the
+construction.  Index those states by $v=0,\ldots,B-1$.  A candidate is a
+binary vector
+\[
+  c=(c_0,\ldots,c_{B-1})\in\bits^B,
+\]
+or equivalently a subset of the non-filler states.  Its ordinary binary code
+is
+\[
+  \operatorname{code}(c):=\sum_{v=0}^{B-1}c_v2^v.
+\]
+
+The formal construction associates to $c$ a homogeneous visible monomial of
+degree $2B$.  It uses one copy of state $v$ when $c_v=1$ and fills all unused
+positions with copies of $f$.  Since $W(f)=1$, its unnormalized value is
+\[
+  \prod_{v:c_v=1} W(v)
+  =\prod_{v:c_v=1}2^{2^v}
+  =2^{\sum_v c_v2^v}
+  =2^{\operatorname{code}(c)}.
+\]
+After normalization, every such monomial has the common extra factor
+$Z^{-2B}$.
+
+There are now two exact uniqueness mechanisms.
+\begin{enumerate}
+  \item Different candidates $c$ have different values
+  $\operatorname{code}(c)$, by uniqueness of binary expansion.
+  \item If $A$ is a set of candidates, then
+  \[
+    \sum_{c\in A}2^{\operatorname{code}(c)}
+  \]
+  uniquely determines $A$, again by uniqueness of binary expansion.
+\end{enumerate}
+Thus distinct sets of candidate monomials always have different values on
+$D_m$.  This nested coding is the reason for the nested exponent
+$2^{2^{\val(x)}}$.
+
+\section{Where cubic locality enters}
+
+Suppose, toward a contradiction, that $D_m$ were the visible marginal of a
+3-local law with $\ell$ hidden bits.  The joint system then has $n+\ell$
+binary coordinates.  A degree-at-most-three feature is indexed by a scope of
+at most three coordinates, and the Lean development proves the convenient
+bound
+\[
+  \#\{\text{cubic scopes}\}\le (n+\ell+1)^3.
+\]
+
+Expanding a visible monomial through the hidden marginal produces tuples of
+joint configurations.  For each tuple, record how many entries activate each
+cubic feature.  Call this its cubic feature profile.  If two collections of
+visible monomials have the same multiset of expanded profiles, then every
+3-local face--Gibbs representation forces the two corresponding sums of
+monomials to be equal.  This remains true when the joint law lies on a
+boundary face and has zero cells; this is the boundary-safe marginal-trade
+certificate proved in Lean.
+
+There are far more sets of candidates than possible profile histograms once
+\[
+  n+\ell+3+(n+1)(n+\ell+1)^3 < 2^n-1.       \tag{1}
+\]
+A finite pigeonhole argument then produces two distinct sets of candidates
+with the same profile histogram.  Cubic locality says their monomial sums
+must be equal, whereas the nested binary encoding says they cannot be equal.
+That contradiction rules out the proposed $\ell$-hidden-bit localization.
+
+The checked arithmetic specialization is
+\[
+  n=4m+24,
+  \qquad
+  \ell\le 2^m.
+\]
+Lean verifies that these values satisfy (1) for every natural number $m$.
+
+\section{The resulting lower bound}
+
+Here $\LC_3(D)$ denotes the least number of hidden binary coordinates in any
+cubic localization of $D$.
+
+\begin{theorem}[Lean checked]
+For every natural number $m$, the rational distribution $D_m$ above has full
+support and satisfies
+\[
+  \LC_3(D_m)>2^m.
+\]
+Since $n_m=4m+24$, this can also be written
+\[
+  \LC_3(D_m)>2^{(n_m-24)/4}=\frac{1}{64}\,2^{n_m/4}.
+\]
+Moreover, for $m\ge 13$,
+\[
+  \LC_3(D_m)>n_m^2.
+\]
+\end{theorem}
+
+Because localization complexity is integer-valued, the first strict
+inequality says that at least $2^m+1$ hidden bits are required.  Some sample
+parameters are
+\[
+\begin{array}{rrrr}
+\toprule
+m & n_m & 2^m & \text{checked conclusion}\\
+\midrule
+0  & 24 & 1    & \LC_3(D_0)\ge 2\\
+1  & 28 & 2    & \LC_3(D_1)\ge 3\\
+4  & 40 & 16   & \LC_3(D_4)\ge 17\\
+13 & 76 & 8192 & \LC_3(D_{13})\ge 8193\\
+\bottomrule
+\end{array}
+\]
+At $m=13$, note that $76^2=5776<8192$.
+
+\section{What ``explicit'' does and does not mean}
+
+The family is explicit in a mathematical sense: given $m$ and $x$, the
+formula above determines an exact rational number $D_m(x)$ without referring
+to a genericity argument or choosing the distribution by pigeonhole.  It is
+also full support, so this result has no direct implication for Boolean
+support-circuit lower bounds.
+
+It is not an efficient finite-precision construction.  Near the end of the
+table, $\val(x)$ is of order $2^n$, so the binary length of
+$2^{2^{\val(x)}}$ is itself doubly exponential in $n$.  The checked
+certificates have degree
+\[
+  2(2^n-1),
+\]
+and the colliding candidate families are selected noncomputably by the finite
+pigeonhole proof rather than printed as practical certificates.
+
+The exponent $1/4$ is also conservative.  The cubic profile count naturally
+contains a factor of roughly $(n+\ell)^3$, suggesting that a sharper analysis
+of the same mechanism should approach the scale $2^{n/3}$.  What is currently
+checked is the clean uniform bound $2^{(n-24)/4}$.
+
+\section{A bounded-precision Boolean tilt and the circuit route}
+
+There is now a second, complementary consequence of the same profile-collision
+argument.  Given a Boolean function $f:\bits^n\to\bits$, define
+\[
+  D_f(x):=\frac{2^{f(x)}}{\sum_y 2^{f(y)}}
+  =\frac{1+f(x)}{2^n+|f^{-1}(1)|}.
+\]
+Unlike $D_m$, this distribution has only two unnormalized weights, $1$ and
+$2$.  Its probability table has modest rational precision and full support.
+
+Suppose a sequential NAND circuit with $s$ gates computes $f$.  Lift $D_f$ to
+the unique full wire trace of the circuit.  Its support is exactly the graph
+of the NAND computation, exposed by the sum of the quadratic NAND penalties.
+On that graph, its log density is a constant plus a unary potential on the
+output wire.  Therefore the gate wires themselves are $s$ hidden bits of a
+quadratic localization, with no additive overhead:
+\[
+  \LC_2(D_f)\le s,
+  \qquad
+  \LC_3(D_f)\le s.                         \tag{2}
+\]
+This circuit-to-localization bridge is now checked in Lean.  Consequently,
+any lower bound for $\LC_3(D_f)$ is immediately a lower bound for the NAND
+gate complexity of $f$.
+
+The marginal-trade calculation also becomes especially clean.  For a visible
+tuple $(x_1,\ldots,x_d)$,
+\[
+  \prod_{i=1}^d D_f(x_i)
+  =Z_f^{-d}\,2^{\sum_i f(x_i)}.
+\]
+Hence a homogeneous trade detects $D_f$ exactly when the two natural numbers
+\[
+  \sum_{t\in A}2^{\#\{i:f(x_{t,i})=1\}}
+  \quad\hbox{and}\quad
+  \sum_{t\in B}2^{\#\{i:f(x_{t,i})=1\}}
+                                                        \tag{3}
+\]
+differ.  The normalizer cancels completely.
+
+The checked powers-of-powers proof chooses two distinct families $A$ and $B$
+of binary candidate monomials having the same expanded cubic profile
+histogram.  A new interpolation lemma observes that the matrix
+\[
+  K(T,C)=2^{|T\cap C|}
+\]
+is invertible over the integers: its one-coordinate matrix is
+\[
+  \begin{pmatrix}1&1\\1&2\end{pmatrix},
+  \qquad
+  \begin{pmatrix}1&1\\1&2\end{pmatrix}^{-1}
+  =\begin{pmatrix}2&-1\\-1&1\end{pmatrix}.
+\]
+Tensoring over the candidate coordinates shows that some binary test $T$
+separates any distinct $A$ and $B$.  Interpreting $T$ as the truth set of a
+Boolean function makes the two quantities in (3) unequal.
+
+This gives the following Lean-checked theorem.
+
+\begin{theorem}[Lean checked, existential]
+For every natural number $m$, there exists a Boolean function
+\[
+  f_m:\bits^{4m+24}\longrightarrow\bits
+\]
+such that its two-level full-support rational tilt satisfies
+\[
+  \LC_3(D_{f_m})>2^m.
+\]
+Every sequential NAND circuit computing $f_m$ therefore has more than $2^m$
+gates.
+\end{theorem}
+
+This is a real circuit lower bound statement, but it is not an explicit
+circuit lower bound.  The function $f_m$ is selected from the noncomputably
+chosen profile collision.  In complexity-theoretic terms, this is an
+existence/counting lower bound in a new language, not a breakthrough against
+explicit circuit lower bounds.
+
+The remaining target is now unusually crisp: replace the interpolated test
+$T$ by a uniformly and efficiently describable test---for example a
+code-theoretic, algebraic, or pseudorandomly generated subset---while
+retaining separation of the matched profile families.  Accomplishing that
+with $m=\Omega(\log n)$ would already give a superlinear explicit NAND lower
+bound through (2), so one should expect this step to contain the genuine
+circuit-lower-bound difficulty.
+
+\section{The exact linear-algebra bottleneck}
+
+There is a useful way to state that remaining difficulty without hiding it
+behind the pigeonhole argument.  Fix a hidden-bit budget $\ell$.  Index the
+binary candidates by $C$, and let $A_\ell(C)$ be the integer histogram of all
+expanded cubic feature profiles contributed by candidate $C$.  A signed
+integer vector $b=(b_C)_C$ is a homogeneous marginal trade precisely when
+\[
+  A_\ell b=0.
+\]
+Its evaluation on the Boolean test $T$ is
+\[
+  K_Tb=\sum_C b_C2^{|T\cap C|}.
+\]
+Thus the concrete certificate problem for an explicit function is
+\[
+  A_\ell b=0,\qquad K_Tb\ne0.                 \tag{4}
+\]
+Over the rationals, such a $b$ exists exactly when the row $K_T$ does not lie
+in the row span of $A_\ell$.  Clearing denominators turns a rational witness
+into an integer trade.
+
+The tensor inverse proves that the full matrix $K$ has full rank.  Therefore
+some row $K_T$ escapes every proper row span, which is exactly the existential
+theorem above.  Full rank alone says nothing about the description or circuit
+complexity of the escaping row.  This is why interpolation closes the
+counting theorem but not the explicit theorem.
+
+There is also a sharp sanity check.  If a proposed test $T$ is computed by an
+$s$-gate NAND circuit, the checked trace construction gives an $s$-hidden-bit
+localization of $D_T$.  Consequently (4) cannot hold at any budget
+$\ell\ge s$.  In particular, parity, affine tests, and other tests with known
+linear-size circuits cannot possibly yield a superlinear bound by a clever
+choice of trade.  A successful explicit $T$ must be a function for which the
+row-span nonmembership proof is itself doing genuine circuit-lower-bound
+work.
+
+This suggests a focused research program rather than a blind search: expose
+enough symmetry in $A_\ell$ to diagonalize part of its row space (for example
+with code or association-scheme methods), and then place an explicit $K_T$
+in a missing component.  A pseudorandom hitting set would help only after one
+proves additional structure---such as bounded degree, sparsity, or Fourier
+concentration---for the relevant trade kernel; arbitrary nonzero multilinear
+polynomials can vanish on all but one Boolean test.
+
+\section{A structured Fourier laboratory}
+
+The most useful structured family found so far replaces the arbitrary
+candidate fiber by a doubly exponential one with an exact Fourier transform.
+Let
+\[
+  A=\bits^q,\qquad Z=\bits^4,\qquad N=|A|=2^q.
+\]
+Use one additional marker coordinate, fixed to zero.  For each truth table
+$s:A\to\bits$, put
+\[
+  C_s:=\{(0,a,z):\operatorname{parity}(z)=s(a)\}.
+\]
+Every $C_s$ has $8N$ points.  More importantly, all $2^N$ sets $C_s$ have
+the same visible moments through degree three.  Indeed, after fixing any at
+most three of the four $z$ coordinates, one $z$ coordinate remains free and
+is uniquely determined by the requested parity.
+
+If the test is another member $C_t$ of the family, then
+\[
+  |C_s\cap C_t|=8\,|\{a:s(a)=t(a)\}|,
+\]
+and hence the Boolean-tilt response matrix is
+\[
+  K(t,s)=256^{N-d_H(s,t)}.
+\]
+It is the $N$-fold tensor power of
+\[
+  \begin{pmatrix}256&1\\1&256\end{pmatrix}.
+\]
+The Walsh character indexed by $U\subseteq A$ has eigenvalue
+\[
+  257^{N-|U|}255^{|U|},
+\]
+so every eigenvalue is nonzero.  This calculation is now checked in Lean.
+Lean also checks, uniformly in $q$ and in the two truth tables, that all of
+the sets $C_s$ have the same cubic moment profile.
+It is a clean diagonalization of the test side of the problem, but it also
+rules out a tempting shortcut: the test kernel itself has no missing Fourier
+level.
+
+For one hidden bit, after removing a common visible monomial, let $b_{a,z}$
+denote the relevant quadratic toric monomial and set
+\[
+ E_{a,e}:=\prod_{z:\operatorname{parity}(z)=e}(1+b_{a,z}).
+\]
+The column for $s$ is
+\[
+  P_s=\prod_{a\in A}E_{a,s(a)}.
+\]
+Its Walsh transform factors exactly:
+\[
+ \sum_s(-1)^{\sum_{a\in U}s(a)}P_s
+ =\prod_{a\notin U}(E_{a,0}+E_{a,1})
+  \prod_{a\in U}(E_{a,0}-E_{a,1}).              \tag{5}
+\]
+Lean now checks this identity over an arbitrary commutative coefficient
+ring.  Thus the remaining efficient-explicitness problem is not about an
+opaque matrix: it is about the span of the explicit toric products on the
+right side of (5).
+
+There is also a useful triangular filtration.  Giving each $b_{a,z}$ degree
+one,
+\[
+ E_{a,0}+E_{a,1}=2+O(b),\qquad
+ E_{a,0}-E_{a,1}=g_a+O(b^2),
+\]
+where
+\[
+ g_a=\sum_z(-1)^{\operatorname{parity}(z)}b_{a,z}.
+\]
+Therefore the least homogeneous degree of the $U$th Walsh product is $|U|$,
+with leading part
+\[
+  2^{N-|U|}\prod_{a\in U}g_a.                  \tag{6}
+\]
+Any relation among (5) must begin with a relation among the simpler products
+in (6).  For a quadratic toric model one can further write
+\[
+ b_{a,z}=c_a d_z\prod_{r=1}^4u_r(a)^{z_r},
+\]
+so, after the quadratic prefix factor $c_a$ is removed, $(g_a)_a$ is a sum
+of at most sixteen product tensors.  Flattening minors are consequently a
+real lead.  The difficulty is equally precise: $c_a$ contains arbitrary
+pair interactions among prefix bits, and its entrywise product can restore
+full flattening rank.  A successful invariant has to cancel the whole
+quadratic prefix profile.
+
+\section{Two honest no-go results}
+
+First, the much larger symmetric group on the $N$ blocks is not a symmetry
+of the binary-prefix construction.  Its literal block symmetries are only
+those induced by signed permutations of the $q$ prefix coordinates.  Treating
+the model as the full Hamming association scheme would therefore prove a
+statement about the wrong matrix.
+
+One can make $S_N$ literal by encoding block $a$ with a one-hot prefix.
+Unfortunately that gives the cubic joint model private parameters for every
+block.  Already for one hidden bit it admits the specialization
+\[
+ b_{a,z}=u_a\prod_{r=1}^4v_{a,r}^{z_r}.
+\]
+The two polynomials $E_{a,0}$ and $E_{a,1}$ are linearly independent: their
+constant terms agree, while the coefficient of $u_a$ in their difference is,
+up to sign,
+\[
+  \prod_{r=1}^4(1-v_{a,r})\ne0.
+\]
+Variables belonging to different blocks are disjoint, so tensoring these
+independent pairs proves that all columns $P_s$ are independent.  Thus the
+one-hot version has the desired symmetry and no trade at all.  There is a
+genuine tension between large block symmetry and the private local parameters
+that symmetry introduces.
+
+Second, a familiar easy test cannot be rescued by a more ingenious trade.
+The Lean-checked circuit trace theorem says that if $T$ has a NAND circuit
+with at most $\ell$ gates, then every $\ell$-hidden marginal trade evaluates
+to zero on $D_T$.  Parity, affine functions, and other linear-size tests are
+therefore categorically incapable of proving a superlinear bound in this
+framework.
+
+The exact target can be written without euphemism.  For a truth table
+$t_q:A\to\bits$ and a budget $L(q)$ growing superlinearly in the visible
+dimension $q+5$, construct an integer vector $b_{q,L}$ such that
+\[
+  M_{q,L}b_{q,L}=0,
+  \qquad
+  \sum_s b_{q,L}(s)\,256^{N-d_H(s,t_q)}\ne0.    \tag{7}
+\]
+The first equation is a complete cubic-profile cancellation, including all
+hidden assignments and all boundary faces.  The second says that the chosen
+Boolean tilt detects it.
+
+The literal finite problem is now solved.  Set $L(q)=q^2$.  For every
+$q\ge64$, compare all subsets of the $2^N$ candidate columns with their
+complete expanded cubic-profile histograms.  The number of subsets is larger
+than the number of histograms, so two distinct subsets collide.  Choose the
+lexicographically first ordered collision $(A_q,B_q)$ and put
+\[
+  b_q(s)={\bf1}_{A_q}(s)-{\bf1}_{B_q}(s).
+\]
+Then $b_q\ne0$ and $M_{q,q^2}b_q=0$.  Since the $256$-agreement tensor is
+integer-injective, some row detects $b_q$; choose the numerically first such
+row as $t_q$.  This gives (7) with $L(q)=q^2=\omega(q+5)$.
+
+The same collision compiles to a boundary-safe face--Gibbs marginal-trade
+certificate.  Consequently the two-level rational law
+\[
+  D_q(x)\ \propto\ 2^{{\bf1}_{C_{t_q}}(x)}
+\]
+on $q+5$ visible variables has full support and
+$\LC_3(D_q)>q^2$.  Every cell has one of only two unnormalized weights, so
+the lower bound is genuinely bounded-precision.
+
+This does \emph{not} constitute an efficiently explicit circuit lower bound.
+Both $(A_q,B_q)$ and $t_q$ are defined by finite exhaustive searches over
+doubly exponential objects.  In ordinary complexity terminology this is a
+canonical diagonalization family, not a low-description or efficiently
+computable family.  The ambitious remaining target is to replace those
+first-witness searches by a uniform efficient construction while retaining
+(7).  That strengthened statement would contain genuine general-circuit
+lower-bound content.
+
+\section{Lean correspondence}
+
+The powers-of-powers construction is in
+\texttt{KLocality/UniformExplicitCubicLowerBound.lean}; the structured
+bounded-precision construction is in the modules beginning with
+\texttt{KLocality/BlockParity}.  The main names are
+\begin{itemize}
+  \item \texttt{uniformCubicCellExponent} and
+  \texttt{uniformCubicUnnormalizedRat} for $W_m$;
+  \item \texttt{uniformCubicDistribution} for the normalized rational table;
+  \item \texttt{superlinearCubicVisibleBits} and
+  \texttt{superlinearCubicDistribution} for $n_m$ and $D_m$;
+  \item \texttt{superlinearCubicDistribution\_support} for full support;
+  \item \texttt{superlinearCubicDistribution\_localizationComplexity\_gt}
+  for $\LC_3(D_m)>2^m$;
+  \item
+  \texttt{superlinearCubicDistribution\_localizationComplexity\_gt\_sq}
+  for the quadratic corollary.
+  \item \texttt{booleanTiltDistribution} for $D_f$;
+  \item
+  \texttt{localizationComplexityBits\_three\_booleanTilt\_le\_CNAND}
+  for the circuit-to-localization bridge;
+  \item \texttt{binarySubsetFamilyProfile\_injective} for the interpolation
+  lemma;
+  \item
+  \texttt{exists\_superlinearBooleanTilt\_}\\
+  \texttt{nandGateLowerBound}
+  for the existential NAND lower bound.
+  \item
+  \texttt{booleanTiltCodes\_eq\_of\_nandCircuit\_le}
+  for the simple-circuit sanity check.
+  \item \texttt{binaryAgreementKernel\_walsh\_eigenvector} for the exact
+  Walsh spectrum of the block-parity test kernel;
+  \item \texttt{binaryProductColumn\_walshTransform} for (5);
+  \item \texttt{parityFourClass\_cubicMoment\_eq} and
+  \texttt{two\_pow\_parityFourClass\_inter\_card} for the local four-bit
+  parity-block facts;
+  \item \texttt{blockParityMoment\_eq} for the full arbitrary-width common
+  cubic-moment fiber.
+  \item \texttt{blockParityCanonicalTradeWitness} for the exact nonzero
+  $b_q$, matrix-kernel identity, and detecting $t_q$ at $L(q)=q^2$.
+  \item \texttt{blockParityCanonicalCertificate} for the compiled
+  boundary-safe marginal trade.
+  \item
+  \texttt{blockParityCanonicalDistribution\_}\
+  \texttt{localizationComplexity\_gt} for
+  $\LC_3(D_q)>q^2$ on a visible type of cardinality $q+5$.
+\end{itemize}
+
+\end{document}

@@ -281,13 +281,11 @@ theorem localizationComplexityBits_le_CNAND
     {accepted : Finset (BitVec inputCount)} (hAccepted : accepted.Nonempty)
     (hRecExists : ∃ gateCount,
       NANDRecognizerWitness inputCount accepted gateCount) :
-    localizationComplexityBits 2 inputCount (uniformOn accepted hAccepted)
-        (twoLocalizationExists_of_nandRecognizerExists hAccepted hRecExists) ≤
+    localizationComplexityBits 2 inputCount (uniformOn accepted hAccepted) ≤
       CNAND inputCount accepted hRecExists := by
   rcases CNAND_spec inputCount accepted hRecExists with ⟨recognizer, hRecognizes⟩
   exact localizationComplexityBits_min 2 inputCount
     (uniformOn accepted hAccepted)
-    (twoLocalizationExists_of_nandRecognizerExists hAccepted hRecExists)
     (CNAND inputCount accepted hRecExists)
     (Recognizer.hasTwoLocalization_of_recognizer
       recognizer accepted hAccepted hRecognizes)

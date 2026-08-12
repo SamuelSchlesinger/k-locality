@@ -142,6 +142,19 @@ def eval {Var : Type u} (assignment : Var → Bool) (polynomial : QuadraticPolyn
     eval assignment (left ++ right) = eval assignment left + eval assignment right := by
   simp [eval]
 
+/-- Evaluation commutes with assembling a polynomial by `List.flatMap`.
+This is a useful normalization rule for families of local penalties. -/
+@[simp]
+theorem eval_flatMap {Var : Type u} {ι : Type*}
+    (assignment : Var → Bool) (items : List ι)
+    (penalty : ι → QuadraticPolynomial Var) :
+    eval assignment (items.flatMap penalty) =
+      (items.map fun item => eval assignment (penalty item)).sum := by
+  induction items with
+  | nil => rfl
+  | cons item items ih =>
+      simp [ih]
+
 /-- Rename every variable in a quadratic polynomial. -/
 def renameVars {Var Var' : Type*} (mapVar : Var → Var')
     (polynomial : QuadraticPolynomial Var) : QuadraticPolynomial Var' :=

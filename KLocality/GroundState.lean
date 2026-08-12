@@ -212,6 +212,27 @@ theorem pmfExpectation_localEnergy_eq_of_feasible
   intro term hTerm
   exact pmfExpectation_term_eq_of_feasible hFeasible hTerm
 
+/-- Feasibility for the canonical marginals of a nonnegative local energy
+preserves zero expected energy, and therefore forces support into the same
+ground space.  Unlike `uniformOn_isKLocalMarginal_of_localEnergy`, this lemma
+does not assume that the reference law is uniform. -/
+theorem support_subset_zeroSet_of_feasible_localEnergy
+    {Var : Type u} [Fintype Var] [DecidableEq Var]
+    {terms : List (LocalEnergyTerm Var)}
+    {p q : Distribution (Assignment Var)}
+    (hNonneg : ∀ assignment, 0 ≤ localEnergyEval terms assignment)
+    (hpSupportZero : p.support ⊆
+      {assignment | localEnergyEval terms assignment = 0})
+    (hFeasible : FeasibleMarginals (localEnergyConstraints terms p) q) :
+    q.support ⊆ {assignment | localEnergyEval terms assignment = 0} := by
+  have hpExpectationZero : pmfExpectation p (localEnergyEval terms) = 0 :=
+    pmfExpectation_eq_zero_of_support_subset_zeroSet p (localEnergyEval terms) hpSupportZero
+  have hqExpectationZero : pmfExpectation q (localEnergyEval terms) = 0 := by
+    rw [pmfExpectation_localEnergy_eq_of_feasible hFeasible]
+    exact hpExpectationZero
+  exact support_subset_zeroSet_of_pmfExpectation_eq_zero q (localEnergyEval terms)
+    hNonneg hqExpectationZero
+
 /-- A nonnegative `k`-scope energy makes its uniform ground-state law `k`-local. -/
 theorem uniformOn_isKLocalMarginal_of_localEnergy
     {Var : Type u} [Fintype Var] [DecidableEq Var]

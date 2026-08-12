@@ -181,10 +181,9 @@ def FlatRecognizerToLocalizationBridge (k r n : Nat)
 /-- Paper-shaped upper bound: `LC_k(D) ≤ G_r(D)` from a generator-to-localization bridge. -/
 theorem localizationComplexity_le_GComplexity
     {k r n : Nat} {D : Distribution (BitVec n)}
-    (hLocExists : ∃ m, HasKLocalizationBits k m n D)
     (hGenExists : ∃ t, GeneratorWitness r n D t)
     (hBridge : GeneratorToLocalizationBridge k r n D) :
-    localizationComplexityBits k n D hLocExists ≤ GComplexity r n D hGenExists := by
+    localizationComplexityBits k n D ≤ GComplexity r n D hGenExists := by
   have hSpec : GeneratorWitness r n D (GComplexity r n D hGenExists) :=
     GComplexity_spec r n D hGenExists
   rcases hSpec with ⟨m, C, hGen, hCost⟩
@@ -192,23 +191,22 @@ theorem localizationComplexity_le_GComplexity
   have hLoc : HasKLocalizationBits k (m + C.size) n D :=
     hasKLocalizationBits_of_localVerificationWitness hWitness
   have hMin :=
-    localizationComplexityBits_min k n D hLocExists (m + C.size) hLoc
+    localizationComplexityBits_min k n D (m + C.size) hLoc
   simpa [hCost] using hMin
 
 /-- Paper-shaped upper bound: `LC_k(D) ≤ C_r(S)` from a flat-support localization bridge. -/
 theorem localizationComplexity_le_CComplexity_of_flat_bridge
     {k r n : Nat} {S : Set (BitVec n)} {D : Distribution (BitVec n)}
-    (hLocExists : ∃ m, HasKLocalizationBits k m n D)
     (hRecExists : ∃ t, RecognizerWitness r n S t)
     (hBridge : FlatRecognizerToLocalizationBridge k r n S D) :
-    localizationComplexityBits k n D hLocExists ≤ CComplexity r n S hRecExists := by
+    localizationComplexityBits k n D ≤ CComplexity r n S hRecExists := by
   have hSpec : RecognizerWitness r n S (CComplexity r n S hRecExists) :=
     CComplexity_spec r n S hRecExists
   rcases hSpec with ⟨C, hRec, hSize⟩
   rcases hBridge C hRec with ⟨hWitness⟩
   have hLoc : HasKLocalizationBits k C.size n D :=
     hasKLocalizationBits_of_localVerificationWitness hWitness
-  have hMin := localizationComplexityBits_min k n D hLocExists C.size hLoc
+  have hMin := localizationComplexityBits_min k n D C.size hLoc
   have hRight : C.gates.length ≤ CComplexity r n S hRecExists := by
     simpa [Cslib.Circuits.Circuit.size] using (Nat.le_of_eq hSize)
   exact Nat.le_trans hMin hRight
@@ -216,19 +214,17 @@ theorem localizationComplexity_le_CComplexity_of_flat_bridge
 /-- Paper-notation alias for `LC_k(D) ≤ G_r(D)`. -/
 theorem LC_k_le_G_r
     {k r n : Nat} {D : Distribution (BitVec n)}
-    (hLocExists : ∃ m, HasKLocalizationBits k m n D)
     (hGenExists : ∃ t, GeneratorWitness r n D t)
     (hBridge : GeneratorToLocalizationBridge k r n D) :
-    LC_k k n D hLocExists ≤ G_r r n D hGenExists :=
-  localizationComplexity_le_GComplexity hLocExists hGenExists hBridge
+    LC_k k n D ≤ G_r r n D hGenExists :=
+  localizationComplexity_le_GComplexity hGenExists hBridge
 
 /-- Paper-notation alias for `LC_k(D) ≤ C_r(S)` in the flat-support setting. -/
 theorem LC_k_le_C_r_of_flat
     {k r n : Nat} {S : Set (BitVec n)} {D : Distribution (BitVec n)}
-    (hLocExists : ∃ m, HasKLocalizationBits k m n D)
     (hRecExists : ∃ t, RecognizerWitness r n S t)
     (hBridge : FlatRecognizerToLocalizationBridge k r n S D) :
-    LC_k k n D hLocExists ≤ C_r r n S hRecExists :=
-  localizationComplexity_le_CComplexity_of_flat_bridge hLocExists hRecExists hBridge
+    LC_k k n D ≤ C_r r n S hRecExists :=
+  localizationComplexity_le_CComplexity_of_flat_bridge hRecExists hBridge
 
 end KLocality

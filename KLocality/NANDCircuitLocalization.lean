@@ -293,14 +293,12 @@ theorem CNAND_min
 theorem localizationComplexityBits_le_of_nandRecognizer
     {inputCount gateCount : Nat}
     {accepted : Finset (BitVec inputCount)} (hAccepted : accepted.Nonempty)
-    (hLocExists : ∃ latentBits,
-      HasKLocalizationBits 2 latentBits inputCount (uniformOn accepted hAccepted))
     (recognizer : Recognizer inputCount gateCount)
     (hRecognizes : recognizer.Recognizes accepted) :
-    localizationComplexityBits 2 inputCount (uniformOn accepted hAccepted) hLocExists ≤
+    localizationComplexityBits 2 inputCount (uniformOn accepted hAccepted) ≤
       gateCount := by
   exact localizationComplexityBits_min 2 inputCount
-    (uniformOn accepted hAccepted) hLocExists gateCount
+    (uniformOn accepted hAccepted) gateCount
       (Recognizer.hasTwoLocalization_of_recognizer
         recognizer accepted hAccepted hRecognizes)
 
@@ -316,31 +314,17 @@ theorem twoLocalizationExists_of_nandRecognizerExists
   exact ⟨gateCount, Recognizer.hasTwoLocalization_of_recognizer
     recognizer accepted hAccepted hRecognizes⟩
 
-/-- Constant-free NAND upper bound when localization existence is supplied explicitly. -/
-theorem localizationComplexityBits_le_CNAND_of_exists
-    {inputCount : Nat}
-    {accepted : Finset (BitVec inputCount)} (hAccepted : accepted.Nonempty)
-    (hLocExists : ∃ latentBits,
-      HasKLocalizationBits 2 latentBits inputCount (uniformOn accepted hAccepted))
-    (hRecExists : ∃ gateCount,
-      NANDRecognizerWitness inputCount accepted gateCount) :
-    localizationComplexityBits 2 inputCount (uniformOn accepted hAccepted) hLocExists ≤
-      CNAND inputCount accepted hRecExists := by
-  rcases CNAND_spec inputCount accepted hRecExists with ⟨recognizer, hRecognizes⟩
-  exact localizationComplexityBits_le_of_nandRecognizer
-    hAccepted hLocExists recognizer hRecognizes
-
 /-- Checked constant-free NAND upper bound `LC₂(U_S) ≤ C_NAND(S)`. -/
 theorem localizationComplexityBits_le_CNAND
     {inputCount : Nat}
     {accepted : Finset (BitVec inputCount)} (hAccepted : accepted.Nonempty)
     (hRecExists : ∃ gateCount,
       NANDRecognizerWitness inputCount accepted gateCount) :
-    localizationComplexityBits 2 inputCount (uniformOn accepted hAccepted)
-        (twoLocalizationExists_of_nandRecognizerExists hAccepted hRecExists) ≤
+    localizationComplexityBits 2 inputCount (uniformOn accepted hAccepted) ≤
       CNAND inputCount accepted hRecExists := by
-  exact localizationComplexityBits_le_CNAND_of_exists hAccepted
-    (twoLocalizationExists_of_nandRecognizerExists hAccepted hRecExists) hRecExists
+  rcases CNAND_spec inputCount accepted hRecExists with ⟨recognizer, hRecognizes⟩
+  exact localizationComplexityBits_le_of_nandRecognizer
+    hAccepted recognizer hRecognizes
 
 end NANDCircuit
 end KLocality

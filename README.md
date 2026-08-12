@@ -171,6 +171,110 @@ This repository also contains a partial Lean 4 development (`KLocality`).  Its c
   counterexample showing that pairwise-local feasibility does not imply a strictly positive
   global feasible point, together with its quadratic exposing-energy certificate and a proof
   that the displayed boundary witness is the unique feasible global table.
+- `KLocality/MarginalTradeCertificate.lean` supplies a boundary-safe exact
+  marginal-polynomial certificate checker, uniform in the locality order,
+  homogeneous degree, and finite observed and latent types.  It expands visible
+  products over latent fibers and checks equality of the resulting multisets of
+  joint feature profiles; face--Gibbs geometry proves soundness even for boundary
+  joint laws.
+- `KLocality/NonzeroHiddenCertificateExample.lean` instantiates that checker on
+  a full-support rational five-bit law.  A sextic certificate rules out every
+  quadratic lift with one hidden bit, while six pairwise implication penalties
+  construct a lift with two hidden bits, proving the exact identity `LC_2(D)=2`.
+- `KLocality/CubicFullSupportExample.lean` gives a weight-only cubic result.
+  The four-bit rational law with probability `2/17` at `1111` and `1/17`
+  elsewhere has full support.  Its nonzero four-way log interaction rules out
+  zero-hidden cubic locality, while a 17-state pairwise lift supplies one
+  hidden bit, proving the exact identity `LC_3(D)=1`.
+- `KLocality/WitnessProductCertificate.lean` packages a reusable
+  sign-definite witness-product obstruction: a finite rational direction that
+  annihilates every expanded hidden-slice monomial rules out a localization
+  uniformly for every distribution with the certified support.
+- `KLocality/UniformParityLowerBound.lean` constructs those certificates
+  symbolically for the even-parity family.  For all natural `k`, `n`, and
+  `ell`, Lean proves that a `k`-localization with `ell` hidden bits implies
+  `n <= k * 2^ell`; hence, for example,
+  `3 * 2^ell < n` implies `LC_3(U_even,n) > ell`.
+- `KLocality/UniformParityUpperBound.lean` gives the matching symbolic
+  Hamming-weight-square lift.  If `n < 2^(ell+1)`, `ell` hidden bits suffice
+  already at locality two.  Combining the bounds yields the infinite exact
+  cubic family `LC_3(U_even, 3 * 2^ell + 1) = ell + 1` for every `ell >= 1`.
+- `KLocality/CubicParityExample.lean` gives an explicit nontrivial cubic
+  localization theorem: the uniform distribution on even-parity seven-bit
+  strings has exactly `LC_3(D)=2`.  Its lower bound is now an instance of the
+  uniform theorem, independently backed by the original finite cube identity;
+  its matching upper bound is a concrete quadratic Hamming-weight-square lift.
+- `KLocality/ExplicitCubicLowerBound.lean` proves a genuinely weight-sensitive
+  cubic lower bound for an explicit full-support rational law on ten bits.  Its
+  unnormalized cell weight is `2^(8^v)` at binary state `v < 1023` and `1` at
+  state `1023`.  A finite pigeonhole argument produces two degree-8184
+  candidate families with identical one-hidden cubic profile histograms;
+  uniqueness of binary expansion makes their probability monomial sums
+  unequal.  Together with a four-face log-interaction obstruction at zero
+  hidden bits, this proves `LC_3(D) > 1`.  The collided families are selected
+  noncomputably from the finite counting proof rather than printed as a
+  practical certificate.
+- `KLocality/UniformExplicitCubicLowerBound.lean` upgrades that mechanism to
+  a superlinear family.  For every natural `m`, the explicit rational law
+  `D_m` on `4m+24` bits has unnormalized weight `2^(2^v)` at every binary state
+  except the final state, which has weight `1`.  Lean proves full support and
+  `LC_3(D_m) > 2^m`, equivalently an exponential lower bound
+  `2^((n-24)/4)` along this sequence of visible dimensions.  It also proves
+  the literal corollary `LC_3(D_m) > (4m+24)^2` for `m>=13`.  A parameterized
+  scope encoding gives the cubic feature bound `(q+1)^3`; finite profile
+  pigeonholing supplies a boundary-safe trade against every hidden count
+  through `2^m`, and binary uniqueness detects every selected trade on the
+  same table.  The proof is axiom-clean.  The largest rational entries have
+  doubly exponential binary length (and hence still larger numerical value),
+  while the certificates have degree `2(2^(4m+24)-1)` and their collisions
+  are selected noncomputably.  These parameters are intentionally
+  unoptimized: the counting threshold suggests exponent `1/3`, while the
+  checked specialization uses `1/4` for simple arithmetic.
+- `KLocality/BooleanTilt.lean`, `KLocality/BooleanTiltCircuit.lean`, and
+  `KLocality/BooleanTiltTrade.lean` develop the bounded-precision full-support
+  law `D_f(x) proportional to 2^(f(x))`.  A size-`s` sequential NAND circuit
+  for `f` gives a quadratic localization of `D_f` with exactly `s` hidden gate
+  wires, so `LC_3(D_f) <= s`.  On the lower-bound side, every homogeneous
+  marginal trade evaluates after cancellation of the common normalizer as an
+  equality between finite sums of powers `2^(number of true tuple entries)`.
+- `KLocality/LatentPadding.lean`, `KLocality/BinarySubsetTransform.lean`, and
+  `KLocality/BooleanTiltExistenceLowerBound.lean` combine that bridge with the
+  uniform cubic profile collision.  Lean proves that for every `m` there
+  exists a Boolean function on `4m+24` bits whose two-level rational tilt has
+  `LC_3(D_f) > 2^m`; hence every sequential NAND circuit computing that
+  function has more than `2^m` gates.  The separating function is chosen from
+  a noncomputable profile collision via the invertible kernel
+  `K(T,C)=2^|T intersect C|`.  This is an exponential existence/counting
+  lower bound, not an explicit circuit lower bound.  Producing a uniform
+  low-description-complexity separating test remains the central open step.
+  The formal sanity theorem
+  `booleanTiltCodes_eq_of_nandCircuit_le` also proves that no trade at hidden
+  budget `ell` can separate `D_f` when a supplied NAND circuit computes `f`
+  with at most `ell` gates.
+- `KLocality/BlockParityFiber.lean` through
+  `KLocality/BlockParityCertificate.lean` close the structured block-parity
+  construction under a canonical finite-search notion of explicitness.  For
+  prefix width `q>=64`, put `N=2^q` and use the `2^N` truth-table candidates
+  `C_s={(0,a,z): parity(z)=s(a)}`.  Lean proves that all candidates share their
+  cubic visible moments, constructs the lexicographically first pair of
+  distinct subset histograms that collide after every assignment of `q^2`
+  hidden bits, and sets `b_q` to their signed incidence vector.  Thus
+  `b_q != 0` and `M_(q,q^2)b_q=0`.  Integer injectivity of the `256` agreement
+  tensor then selects the first `t_q` satisfying
+  `sum_s b_q(s) 256^(N-d_H(s,t_q)) != 0`.  The collision compiles to a
+  boundary-safe `MarginalTradeCertificate`, yielding a full-support rational
+  two-level law on `q+5` visible variables with `LC_3(D_q)>q^2`.
+  The theorem `blockParityCanonicalDistribution_eventually_gt_linear`
+  packages this as domination of every fixed linear function of the visible
+  dimension.
+
+  This is an exhaustive-search/diagonalization family, not an efficiently
+  explicit circuit lower bound: neither `t_q` nor the colliding subsets have
+  a polynomial-time, small-circuit, or low-description construction.  The
+  remaining circuit frontier is to replace the first-witness searches by a
+  uniformly efficient description while retaining the same separation.
+  `research/block-parity-fiber.md` records the structural Fourier route and
+  its current limitations.
 
 The checked recognizer theorem now includes the paper's hardwired-input-constant
 accounting.  A translation from cslib's permissive raw DAG representation, NAND
@@ -178,12 +282,16 @@ universality/existence inside Lean, and the generator theorem `LC_2 <= G_NAND`
 remain to be done.  The older generic fan-in circuit bounds in
 `CircuitConnections.lean` still use explicit bridge hypotheses; the concrete NAND
 theorems are deliberately separate.
-The full face--Gibbs equivalence, including exposing energies and nonuniform
-within-face Gibbs weights, universal and balanced feature lifts,
-algebraic certificates, support invariants, recognition algorithms,
-zero-temperature transfer, exchangeable bounds, and circuit converses are also
-not yet Lean-formalized.  Universal existence is still missing, so the current
-`LC_k` API requires an explicit existence proof.
+The face--Gibbs equivalence, universal support-cardinality construction,
+selector closure, the finite marginal-trade certificate checker, and one
+explicit full-support cubic family with unbounded `LC_3` are now
+Lean-formalized.
+The universal balanced block lift, the general elimination
+and dimension theorems that guarantee marginal certificates, recognition
+algorithms, zero-temperature transfer, exchangeable bounds, and circuit
+converses remain open in Lean.  The explicit cubic family is a genuine
+asymptotic lower bound, but it does not formalize the manuscript's generic
+almost-everywhere theorem or its sharp `2^(n/3)` cubic scale.
 
 The cslib dependency is pinned to reachable commit `8961914`, which uses the same Lean `v4.29.0-rc2` toolchain and contains the circuit modules imported here.  A clean dependency refresh followed by `lake build` succeeds at this revision.
 

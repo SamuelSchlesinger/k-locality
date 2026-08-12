@@ -333,6 +333,22 @@ def IsKLocalMarginal
     MarginalConstraintsRespectK k constraints ∧
       IsMaxEntropyAmong (FeasibleMarginals constraints) p
 
+/-- A distribution uniquely determined by marginals on scopes of size at most `k`
+is `k`-local.  This is the nonuniform-weight analogue of the local-verification
+shortcut: uniqueness makes entropy maximal without requiring the law to be
+uniform on its support. -/
+theorem isKLocalMarginal_of_unique_feasible
+    {Var : Type u} [Fintype Var] [DecidableEq Var]
+    (k : Nat) (p : Distribution (Assignment Var))
+    (constraints : List (MarginalConstraint Var))
+    (hBound : MarginalConstraintsRespectK k constraints)
+    (hFeasible : FeasibleMarginals constraints p)
+    (hUnique : ∀ q, FeasibleMarginals constraints q → q = p) :
+    IsKLocalMarginal k p := by
+  refine ⟨constraints, hBound, hFeasible, ?_⟩
+  intro q hq
+  rw [hUnique q hq]
+
 /-- Local-verification `k`-locality certificate in the marginal setting. -/
 theorem localVerificationIsKLocalMarginalOnFinset
     {Var : Type u} [Fintype Var] [DecidableEq Var]
@@ -448,82 +464,82 @@ theorem hasKLocalizationBits_of_localVerificationWitness
     HasKLocalizationBits k latentBits n pObs := by
   exact ⟨kLocalizationOfWitness w⟩
 
-/-- `LC_k(D)`: minimal latent-variable count among `k`-localizations, assuming existence. -/
+/-- `LC_k(D)`: minimal latent-variable count among `k`-localizations.
+
+The value is `0` only when no localization exists.  Universal existence for
+`k ≥ 2` is proved downstream, so the fallback branch is unreachable in the
+paper's regime.  Keeping the definition total avoids exposing an arbitrary
+existence proof in the paper-facing API. -/
 noncomputable def localizationComplexity
     (k : Nat) (ObsVar : Type u)
     [DecidableEq ObsVar] [Fintype ObsVar]
-    (pObs : Distribution (Assignment ObsVar))
-    (hExists : ∃ m, HasKLocalization k m ObsVar pObs) : Nat := by
+    (pObs : Distribution (Assignment ObsVar)) : Nat := by
   classical
-  exact Nat.find hExists
+  exact if hExists : ∃ m, HasKLocalization k m ObsVar pObs then Nat.find hExists else 0
 
 theorem localizationComplexity_spec
     (k : Nat) (ObsVar : Type u)
     [DecidableEq ObsVar] [Fintype ObsVar]
     (pObs : Distribution (Assignment ObsVar))
     (hExists : ∃ m, HasKLocalization k m ObsVar pObs) :
-    HasKLocalization k (localizationComplexity k ObsVar pObs hExists) ObsVar pObs := by
+    HasKLocalization k (localizationComplexity k ObsVar pObs) ObsVar pObs := by
   classical
+  simp only [localizationComplexity, dif_pos hExists]
   exact Nat.find_spec hExists
 
 theorem localizationComplexity_min
     (k : Nat) (ObsVar : Type u)
     [DecidableEq ObsVar] [Fintype ObsVar]
     (pObs : Distribution (Assignment ObsVar))
-    (hExists : ∃ m, HasKLocalization k m ObsVar pObs) :
-    ∀ m, HasKLocalization k m ObsVar pObs →
-      localizationComplexity k ObsVar pObs hExists ≤ m := by
+    (m : Nat) (hm : HasKLocalization k m ObsVar pObs) :
+    localizationComplexity k ObsVar pObs ≤ m := by
   classical
-  intro m hm
+  let hExists : ∃ m, HasKLocalization k m ObsVar pObs := ⟨m, hm⟩
+  simp only [localizationComplexity, dif_pos hExists]
   exact Nat.find_min' hExists hm
 
 theorem localizationComplexity_mono
     {ObsVar : Type u} [DecidableEq ObsVar] [Fintype ObsVar]
     {pObs : Distribution (Assignment ObsVar)}
     {kSmall kLarge : Nat} (hkl : kSmall ≤ kLarge)
-    (hSmall : ∃ m, HasKLocalization kSmall m ObsVar pObs)
-    (hLarge : ∃ m, HasKLocalization kLarge m ObsVar pObs) :
-    localizationComplexity kLarge ObsVar pObs hLarge ≤
-      localizationComplexity kSmall ObsVar pObs hSmall := by
-  apply localizationComplexity_min kLarge ObsVar pObs hLarge
+    (hSmall : ∃ m, HasKLocalization kSmall m ObsVar pObs) :
+    localizationComplexity kLarge ObsVar pObs ≤
+      localizationComplexity kSmall ObsVar pObs := by
+  apply localizationComplexity_min
   exact hasKLocalization_mono hkl (localizationComplexity_spec kSmall ObsVar pObs hSmall)
 
 /-- `LC_k(D)` in bit-vector form for observed `n`-bit distributions. -/
 noncomputable abbrev localizationComplexityBits
     (k n : Nat)
-    (pObs : Distribution (BitVec n))
-    (hExists : ∃ ℓ, HasKLocalizationBits k ℓ n pObs) : Nat :=
-  localizationComplexity k (Fin n) pObs hExists
+    (pObs : Distribution (BitVec n)) : Nat :=
+  localizationComplexity k (Fin n) pObs
 
 theorem localizationComplexityBits_spec
     (k n : Nat)
     (pObs : Distribution (BitVec n))
     (hExists : ∃ ℓ, HasKLocalizationBits k ℓ n pObs) :
-    HasKLocalizationBits k (localizationComplexityBits k n pObs hExists) n pObs :=
+    HasKLocalizationBits k (localizationComplexityBits k n pObs) n pObs :=
   localizationComplexity_spec k (Fin n) pObs hExists
 
 theorem localizationComplexityBits_min
     (k n : Nat)
     (pObs : Distribution (BitVec n))
-    (hExists : ∃ ℓ, HasKLocalizationBits k ℓ n pObs) :
-    ∀ ℓ, HasKLocalizationBits k ℓ n pObs →
-      localizationComplexityBits k n pObs hExists ≤ ℓ :=
-  localizationComplexity_min k (Fin n) pObs hExists
+    (ℓ : Nat) (hLoc : HasKLocalizationBits k ℓ n pObs) :
+    localizationComplexityBits k n pObs ≤ ℓ :=
+  localizationComplexity_min k (Fin n) pObs ℓ hLoc
 
 theorem localizationComplexityBits_mono
     {n : Nat} {pObs : Distribution (BitVec n)}
     {kSmall kLarge : Nat} (hkl : kSmall ≤ kLarge)
-    (hSmall : ∃ ℓ, HasKLocalizationBits kSmall ℓ n pObs)
-    (hLarge : ∃ ℓ, HasKLocalizationBits kLarge ℓ n pObs) :
-    localizationComplexityBits kLarge n pObs hLarge ≤
-      localizationComplexityBits kSmall n pObs hSmall :=
-  localizationComplexity_mono (ObsVar := Fin n) (pObs := pObs) hkl hSmall hLarge
+    (hSmall : ∃ ℓ, HasKLocalizationBits kSmall ℓ n pObs) :
+    localizationComplexityBits kLarge n pObs ≤
+      localizationComplexityBits kSmall n pObs :=
+  localizationComplexity_mono (ObsVar := Fin n) (pObs := pObs) hkl hSmall
 
 /-- Paper-style notation alias for `LC_k(D)` on `n` observed bits. -/
 noncomputable abbrev LC_k
     (k n : Nat)
-    (D : Distribution (BitVec n))
-    (hExists : ∃ ℓ, HasKLocalizationBits k ℓ n D) : Nat :=
-  localizationComplexityBits k n D hExists
+    (D : Distribution (BitVec n)) : Nat :=
+  localizationComplexityBits k n D
 
 end KLocality

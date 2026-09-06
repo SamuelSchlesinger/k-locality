@@ -268,4 +268,22 @@ theorem isKLocalMarginal_reindexDistribution_iff
       (isFaceGibbs_reindexDistribution equiv k p
         ((isKLocalMarginal_iff_isFaceGibbs k p).1 hLocal))
 
+/-- Transport both visible and hidden coordinate types without changing their roles. -/
+noncomputable def KLocalization.reindex
+    {k : Nat} {V H V' H' : Type*}
+    [Fintype V] [DecidableEq V] [Fintype H] [DecidableEq H]
+    [Fintype V'] [DecidableEq V'] [Fintype H'] [DecidableEq H']
+    {p : Distribution (Assignment V)} (loc : KLocalization k V H p)
+    (ev : V ≃ V') (eh : H ≃ H') :
+    KLocalization k V' H' (reindexDistribution ev p) where
+  lifted := reindexDistribution (Equiv.sumCongr ev eh) loc.lifted
+  marginal := by
+    unfold IsMarginalModel reindexDistribution
+    rw [PMF.map_comp]
+    have h := congrArg (fun q => q.map (assignmentEquiv ev)) loc.marginal
+    dsimp only at h
+    rw [PMF.map_comp] at h
+    exact h
+  kLocal := (isKLocalMarginal_reindexDistribution_iff _ _ _).mpr loc.kLocal
+
 end KLocality

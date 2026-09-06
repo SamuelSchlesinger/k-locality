@@ -5,7 +5,7 @@ This file records what kind of evidence supports each major claim in
 proof, a finite computation, and a literature check.  None of those categories
 silently substitutes for another.
 
-Status reflected here: 2026-08-12.  The Lean toolchain is
+Status reflected here: 2026-09-05.  The Lean toolchain is
 `leanprover/lean4:v4.29.0-rc2`; `cslib` is pinned to
 `89619147bf2ef78b8f04c66cbb41546d4757554e`.
 
@@ -39,8 +39,10 @@ Status reflected here: 2026-08-12.  The Lean toolchain is
 | Relative Gibbs reductions, composition, tensoring, and recovery of `n + L_k(D)` | Lean checked for the definition, identity, additive composition, absolute equality, and compilation corollary in `KLocality/RelativeGibbs.lean`, `KLocality/GibbsReduction.lean`, `KLocality/GibbsReductionComposition.lean`, and `KLocality/GibbsReductionAbsolute.lean`; manuscript proof for tensoring | The tensor clause is not yet Lean formalized; this remains a nonuniform projective weight reduction, not sample-preserving conversion or an efficient reduction between succinct inputs |
 | Boundary-feasibility counterexample | Lean checked in `KLocality/InteriorFeasibilityCounterexample.lean` | Refutes only the support-intersection/interior-feasibility converse; it does not refute face--Gibbs geometry |
 | Universal existence with at most `|supp(D)|` hidden bits | Lean checked in `KLocality/UniversalExistence.lean` | The construction uses one support-index bit per positive-mass visible point, a quadratic exact-one/consistency energy, and singleton hidden marginals to preserve arbitrary weights |
-| Universal balanced block-feature lift | Manuscript proof; finite validation by `validate_block_lift.py` | The script checks small cubes, Rosenberg penalties, latent counts, graph uniqueness where feasible, and monomial factorization; the theorem is not Lean formalized |
-| Marginal-ideal certificates, generic full-support lower bound, and worst-case `Theta_k(2^(n/k))` scale | Manuscript proofs and primary-source audit for the general theorem; Lean-checked zero-hidden log-interaction API in `KLocality/LogInteractionCertificate.lean`; uniform boundary-safe marginal-trade checker in `KLocality/MarginalTradeCertificate.lean`; exact examples in `KLocality/FullSupportCertificateExample.lean`, `KLocality/CubicFullSupportExample.lean`, `KLocality/NonzeroHiddenCertificateExample.lean`, `KLocality/ExplicitCubicLowerBound.lean`, and `KLocality/UniformExplicitCubicLowerBound.lean` | Lean proves `LC_3(D)=1` for the rational four-bit boosted-point law and `LC_2(D)=2` for the five-bit law `(1+1_123)(1+1_345)/41`. It proves `LC_3(D)>1` for the explicit ten-bit powers-of-powers law, and now proves the superlinear uniform statement: for every `m`, the full-support rational law on `4m+24` bits with unnormalized weights `2^(2^v)` off the final state and `1` at the final state satisfies `LC_3(D_m)>2^m`; for `m>=13`, Lean also derives `LC_3(D_m)>(4m+24)^2`. The parameterized proof bounds cubic scopes by `(q+1)^3` and selects finite profile collisions noncomputably; certificate degree is `2(2^(4m+24)-1)`. The table is explicit but its largest integers have doubly exponential binary length (and numerical value one exponential level larger). The general all-`k` eliminant, generic almost-everywhere result, sharp `Theta_k(2^(n/k))` scale, practical certificate extraction, and general degree bounds remain unformalized. |
+| Universal balanced block-feature lift | Lean checked in `KLocality/BlockFeatureLift.lean` and `KLocality/BalancedUniversalLift.lean`; independent finite validation by `validate_block_lift.py` | For all `n`, all `k>=2`, and every probability table, Lean proves `LC_k(D) <= min(supportCard(D), b_k(n))` and the uniform `O_k(2^(n/k))` corollary. The lift preserves the whole table; nonnegative quadratic penalties and packed visible monomials make its moment fiber a singleton. Empty blocks and boundary laws are included. |
+| General marginal variety and integer certificates | Lean checked in `KLocality/MarginalVariety.lean`, `KLocality/MarginalVarietyDimension.lean`, `KLocality/MarginalVarietyElimination.lean`, `KLocality/MarginalVarietyProjective.lean`, and `KLocality/MarginalIdentityDecision.lean` | The complex projective Zariski closure, boundary-safe containment, homogeneous certificate implication, exact rational elimination ideal, finite generation, coordinate-ring dimension bound, and nonzero homogeneous integer identities below the parameter-count threshold are checked. Projective dimension uses homogeneous coordinate-ring transcendence degree minus one. A compiled rational-expression checker has a uniform soundness/completeness proof and decides the elimination ideal; no Groebner-basis generator or running-time bound is claimed. |
+| Generic full-support lower bound and worst-case `Theta_k(2^(n/k))` scale | Manuscript proofs and primary-source audit; Lean-checked universal upper bound | The measure-zero argument on the probability simplex, hence the generic lower bound and matching worst-case scale, remain unformalized. The general explicit certificate-degree bound also remains separate. |
+| Explicit weight-sensitive marginal certificates | Lean checked in `KLocality/MarginalTradeCertificate.lean`, `KLocality/NonzeroHiddenCertificateExample.lean`, `KLocality/ExplicitCubicLowerBound.lean`, and `KLocality/UniformExplicitCubicLowerBound.lean` | Lean proves `LC_2(D)=2` for the five-bit law `(1+1_123)(1+1_345)/41`, `LC_3(D)>1` for the explicit ten-bit law, and `LC_3(D_m)>2^m` for a positive rational law on `4m+24` bits; for `m>=13`, it also proves `LC_3(D_m)>(4m+24)^2`. The uniform proof selects finite profile collisions noncomputably and has degree `2(2^(4m+24)-1)` certificates. The largest rational entries have doubly exponential binary length. The sharp cubic scale and practical extraction are not implied by these constructions. |
 | Full-support adjacent hierarchy | Lean-checked fixed cubic instance in `KLocality/CubicFullSupportExample.lean`; manuscript proof of Proposition `prop:positive-hierarchy` | The exact rational visible law has `LC_3(D)=1` and `LC_4(D)=0` by locality monotonicity, but its displayed one-hidden lift is a boundary model. The uniform all-`k`, all-ambient-dimension statement and the manuscript's strictly positive lift remain unformalized. |
 | Effective rational hard tables and explicit certificate-degree bound | Manuscript proof | No end-to-end generated eliminant is checked for the asymptotic construction |
 | Zero-temperature transfer | Manuscript proof using the closed finite selector-max image | Not Lean formalized; no finite script can establish the arbitrary-face limiting theorem |
@@ -86,6 +88,20 @@ rg -n '\bsorry\b|\badmit\b|^\s*axiom\b' KLocality Main.lean KLocality.lean
 
 An empty placeholder search and a successful build establish only the Lean
 claims listed above.
+
+For the balanced lift and general marginal-variety theorem, also run:
+
+```bash
+lake env lean -DwarningAsError=true research/check_universal_marginal.lean
+```
+
+This checks that twelve central declarations depend only on `propext`,
+`Classical.choice`, and `Quot.sound`. It rejects `sorryAx`, project-local
+axioms, and native-evaluation axioms in those dependency chains. Eight compiled
+identity checks cover independence, the quadratic model's cubic odds ratio,
+hidden-variable summation, rejection of a nonidentity, the empty cube, and the
+cone's freely varying scale. The uniform
+soundness/completeness proof is independent of these finite executions.
 
 ### Finite and exact-arithmetic validation
 

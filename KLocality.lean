@@ -7,6 +7,13 @@ import KLocality.InteriorFeasibilityCounterexample
 import KLocality.QuadraticNAND
 import KLocality.Tactic
 import KLocality.UniversalExistence
+import KLocality.BlockFeatureLift
+import KLocality.BalancedUniversalLift
+import KLocality.MarginalVariety
+import KLocality.MarginalVarietyDimension
+import KLocality.MarginalVarietyElimination
+import KLocality.MarginalVarietyProjective
+import KLocality.MarginalIdentityDecision
 import KLocality.Canonical
 import KLocality.MaxSupport
 import KLocality.FeaturePolynomial

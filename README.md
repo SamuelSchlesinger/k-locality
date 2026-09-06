@@ -171,6 +171,27 @@ This repository also contains a partial Lean 4 development (`KLocality`).  Its c
   counterexample showing that pairwise-local feasibility does not imply a strictly positive
   global feasible point, together with its quadratic exposing-energy certificate and a proof
   that the displayed boundary witness is the unique feasible global table.
+- `KLocality/BlockFeatureLift.lean` and `KLocality/BalancedUniversalLift.lean`
+  prove the universal balanced lift for every probability table and `k>=2`:
+  `LC_k(D) <= min(supportCard(D), b_k(n))`, with the exact manuscript count
+  and the uniform `O_k(2^(n/k))` corollary. Quadratic penalties enforce the
+  feature graph, and the lifted moments uniquely determine the whole law.
+  The proof includes boundary distributions and empty blocks.
+- `KLocality/MarginalVariety.lean` through
+  `KLocality/MarginalVarietyProjective.lean` formalize the general complex
+  projective marginal variety. Every localization belongs to its Zariski
+  closure, including boundary lifts and smaller hidden budgets after padding.
+  Lean identifies the homogeneous rational elimination ideal, proves the
+  dimension bound `d_k(n+ell)-1`, and obtains a nonzero homogeneous integer
+  certificate whenever `d_k(n+ell)<2^n`. The dimension is expressed through
+  the homogeneous coordinate ring's transcendence degree.
+- `KLocality/MarginalIdentityDecision.lean` implements exact rational
+  polynomial identity checking for arbitrary finite visible and hidden types.
+  Its soundness and completeness are proved against the elimination ideal;
+  every rational polynomial has an input expression. This computes ideal
+  membership, with no claim of a Groebner-basis generator or an efficient
+  running time. `research/check_universal_marginal.lean` audits the main
+  theorem axioms and exercises the compiled checker on known identities.
 - `KLocality/MarginalTradeCertificate.lean` supplies a boundary-safe exact
   marginal-polynomial certificate checker, uniform in the locality order,
   homogeneous degree, and finite observed and latent types.  It expands visible
@@ -282,14 +303,13 @@ universality/existence inside Lean, and the generator theorem `LC_2 <= G_NAND`
 remain to be done.  The older generic fan-in circuit bounds in
 `CircuitConnections.lean` still use explicit bridge hypotheses; the concrete NAND
 theorems are deliberately separate.
-The face--Gibbs equivalence, universal support-cardinality construction,
-selector closure, the finite marginal-trade certificate checker, and one
-explicit full-support cubic family with unbounded `LC_3` are now
-Lean-formalized.
-The universal balanced block lift, the general elimination
-and dimension theorems that guarantee marginal certificates, recognition
-algorithms, zero-temperature transfer, exchangeable bounds, and circuit
-converses remain open in Lean.  The explicit cubic family is a genuine
+The face--Gibbs equivalence, universal support-cardinality and balanced block
+constructions, selector closure, the general marginal variety and integer
+certificates, the finite marginal-trade checker, and one explicit full-support
+cubic family with unbounded `LC_3` are now Lean-formalized.
+The generic almost-everywhere theorem, general certificate-degree bound,
+recognition algorithms, zero-temperature transfer, exchangeable bounds, and
+circuit converses remain open in Lean. The explicit cubic family is a genuine
 asymptotic lower bound, but it does not formalize the manuscript's generic
 almost-everywhere theorem or its sharp `2^(n/3)` cubic scale.
 

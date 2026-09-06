@@ -28,6 +28,7 @@ import KLocality.SelectorTradeExample
 import KLocality.LogInteractionCertificate
 import KLocality.FullSupportCertificateExample
 import KLocality.CubicFullSupportExample
+import KLocality.UniformBoostedPoint
 import KLocality.MarginalTradeCertificate
 import KLocality.NonzeroHiddenCertificateExample
 import KLocality.WitnessProductCertificate

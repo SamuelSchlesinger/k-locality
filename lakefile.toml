@@ -9,7 +9,3 @@ rev = "89619147bf2ef78b8f04c66cbb41546d4757554e"
 
 [[lean_lib]]
 name = "KLocality"
-
-[[lean_exe]]
-name = "klocality"
-root = "Main"

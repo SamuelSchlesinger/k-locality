@@ -36,11 +36,11 @@ def twoCubicWeightsRat (assignment : BitVec 5) : ℚ :=
 
 theorem twoCubicWeightsRat_pos (assignment : BitVec 5) :
     0 < twoCubicWeightsRat assignment := by
-  native_decide +revert
+  decide +kernel +revert
 
 theorem sum_twoCubicWeightsRat :
     (∑ assignment : BitVec 5, twoCubicWeightsRat assignment) = 1 := by
-  native_decide
+  decide +kernel
 
 /-- The real table used to construct the PMF. -/
 noncomputable def twoCubicWeights (assignment : BitVec 5) : ℝ :=
@@ -96,20 +96,87 @@ def oneHiddenSexticNegative : Fin 3 → Fin 6 → BitVec 5 :=
     sexticTuple 1 6 8 19 20 29,
     sexticTuple 2 4 9 17 23 28]
 
-/-- Exact degree-six certificate for one latent bit.  `native_decide` checks
-the equality of all 192 expanded joint feature profiles, with multiplicity. -/
+/-! The explicit pairing avoids searching for multiset equality inside the kernel.
+`research/generate_sextic_matching.py --check` reproduces these two tables.
+The inverse laws and every paired feature equality below are kernel-checked. -/
+
+private abbrev SexticExpansion := Fin 3 × (Fin 6 → Assignment (Fin 1))
+
+private def sexticExpansionCode (expanded : SexticExpansion) : Nat :=
+  expanded.1.val * 64 + ∑ index : Fin 6, if expanded.2 index 0 then 2 ^ index.val else 0
+
+private def sexticExpansionOfCode (code : Nat) : SexticExpansion :=
+  (Fin.ofNat 3 (code / 64), fun index _ => code.testBit index.val)
+
+private def sexticProfileForwardCodes : List Nat :=
+  [0, 1, 66, 131, 132, 69, 6, 7, 72, 137, 18, 19, 34, 35, 149, 79,
+   8, 9, 146, 83, 97, 142, 14, 15, 152, 89, 26, 27, 42, 43, 107, 159,
+   160, 84, 20, 21, 36, 37, 102, 167, 48, 49, 177, 94, 108, 173, 54, 55,
+   112, 170, 28, 29, 44, 45, 182, 119, 56, 57, 122, 187, 188, 125, 62, 63,
+   64, 65, 129, 3, 4, 134, 70, 71, 80, 81, 17, 139, 162, 13, 86, 87,
+   144, 10, 74, 75, 98, 99, 22, 151, 24, 154, 90, 91, 114, 115, 179, 31,
+   32, 140, 76, 77, 100, 101, 165, 39, 168, 41, 92, 93, 116, 117, 53, 175,
+   104, 105, 50, 157, 180, 46, 110, 111, 120, 121, 185, 59, 60, 190, 126, 127,
+   128, 2, 130, 67, 68, 133, 5, 135, 136, 73, 138, 11, 33, 141, 85, 143,
+   16, 145, 82, 147, 161, 78, 163, 23, 88, 153, 25, 155, 169, 51, 171, 95,
+   96, 148, 12, 150, 164, 38, 166, 103, 40, 156, 113, 158, 172, 109, 174, 47,
+   176, 106, 178, 30, 52, 181, 118, 183, 184, 58, 186, 123, 124, 189, 61, 191]
+
+private def sexticProfileInverseCodes : List Nat :=
+  [0, 1, 129, 67, 68, 134, 6, 7, 16, 17, 81, 139, 162, 77, 22, 23,
+   144, 74, 10, 11, 34, 35, 86, 151, 88, 154, 26, 27, 50, 51, 179, 95,
+   96, 140, 12, 13, 36, 37, 165, 103, 168, 105, 28, 29, 52, 53, 117, 175,
+   40, 41, 114, 157, 180, 110, 46, 47, 56, 57, 185, 123, 124, 190, 62, 63,
+   64, 65, 2, 131, 132, 5, 70, 71, 8, 137, 82, 83, 98, 99, 149, 15,
+   72, 73, 146, 19, 33, 142, 78, 79, 152, 25, 90, 91, 106, 107, 43, 159,
+   160, 20, 84, 85, 100, 101, 38, 167, 112, 113, 177, 30, 44, 173, 118, 119,
+   48, 170, 92, 93, 108, 109, 182, 55, 120, 121, 58, 187, 188, 61, 126, 127,
+   128, 66, 130, 3, 4, 133, 69, 135, 136, 9, 138, 75, 97, 141, 21, 143,
+   80, 145, 18, 147, 161, 14, 163, 87, 24, 153, 89, 155, 169, 115, 171, 31,
+   32, 148, 76, 150, 164, 102, 166, 39, 104, 156, 49, 158, 172, 45, 174, 111,
+   176, 42, 178, 94, 116, 181, 54, 183, 184, 122, 186, 59, 60, 189, 125, 191]
+
+private def sexticProfileForward (expanded : SexticExpansion) : SexticExpansion :=
+  sexticExpansionOfCode (sexticProfileForwardCodes.getD (sexticExpansionCode expanded) 0)
+
+private def sexticProfileInverse (expanded : SexticExpansion) : SexticExpansion :=
+  sexticExpansionOfCode (sexticProfileInverseCodes.getD (sexticExpansionCode expanded) 0)
+
+private def sexticProfileEquiv : SexticExpansion ≃ SexticExpansion where
+  toFun := sexticProfileForward
+  invFun := sexticProfileInverse
+  left_inv := by decide +kernel
+  right_inv := by decide +kernel
+
+private theorem sexticProfile_matched :
+    ∀ expanded : SexticExpansion,
+      tupleFeatureProfile 2 6 (liftTuple (oneHiddenSexticPositive expanded.1) expanded.2) =
+        tupleFeatureProfile 2 6
+          (liftTuple (oneHiddenSexticNegative (sexticProfileForward expanded).1)
+            (sexticProfileForward expanded).2) := by
+  decide +kernel
+
+/-- Exact degree-six certificate for one latent bit, with an explicit bijection
+between its 192 expanded profiles. -/
 def oneHiddenSexticCertificate :
     MarginalTradeCertificate 2 6 3 (Fin 5) (Fin 1) where
   positive := oneHiddenSexticPositive
   negative := oneHiddenSexticNegative
-  profileBalance := by native_decide
+  profileBalance := by
+    classical
+    simp_rw [sexticProfile_matched]
+    have hMapped := congrArg
+      (fun values : Multiset SexticExpansion => values.map (fun expanded =>
+        tupleFeatureProfile 2 6 (liftTuple (oneHiddenSexticNegative expanded.1) expanded.2)))
+      (Multiset.map_univ_val_equiv sexticProfileEquiv)
+    simpa only [Multiset.map_map, Function.comp_apply] using hMapped
 
 /-- The same visible trade, specialized to no latent coordinates. -/
 def zeroHiddenSexticCertificate :
     MarginalTradeCertificate 2 6 3 (Fin 5) (Fin 0) where
   positive := oneHiddenSexticPositive
   negative := oneHiddenSexticNegative
-  profileBalance := by native_decide
+  profileBalance := by decide +kernel
 
 def oneHiddenSexticPositiveValueRat : ℚ :=
   ∑ term : Fin 3,
@@ -123,11 +190,11 @@ def oneHiddenSexticNegativeValueRat : ℚ :=
 
 theorem oneHiddenSexticPositiveValueRat_eq :
     oneHiddenSexticPositiveValueRat = 6 / (41 : ℚ) ^ 6 := by
-  native_decide
+  decide +kernel
 
 theorem oneHiddenSexticNegativeValueRat_eq :
     oneHiddenSexticNegativeValueRat = 7 / (41 : ℚ) ^ 6 := by
-  native_decide
+  decide +kernel
 
 theorem oneHiddenSextic_positiveValue :
     oneHiddenSexticCertificate.positiveValue twoCubicWeights =
@@ -234,10 +301,10 @@ def twoCubicLiftedSet :
   Finset.univ.filter fun joint => twoCubicViolationCount joint = 0
 
 theorem twoCubicLiftedSet_nonempty : twoCubicLiftedSet.Nonempty := by
-  native_decide
+  decide +kernel
 
 theorem twoCubicLiftedSet_card : twoCubicLiftedSet.card = 41 := by
-  native_decide
+  decide +kernel
 
 /-- One scoped quadratic implication penalty. -/
 def hiddenVisiblePenalty (hidden : Fin 2) (visible : Fin 5) :
@@ -297,7 +364,7 @@ theorem twoCubicLifted_fiber_weight (visible : BitVec 5) :
     (∑ latent : Assignment (Fin 2),
       if jointAssignment visible latent ∈ twoCubicLiftedSet then
         (1 / 41 : ℚ) else 0) = twoCubicWeightsRat visible := by
-  native_decide +revert
+  decide +kernel +revert
 
 /-- Projection of the uniform 41-state lifted law is exactly the rational
 five-bit target. -/

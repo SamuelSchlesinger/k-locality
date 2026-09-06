@@ -115,6 +115,7 @@ def main():
     parser.add_argument("--samples", type=int, default=260)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
+    print(f"parameters={vars(args)}", flush=True)
 
     states = range(1 << args.visible_bits)
     visible_scopes = feature_scopes(args.visible_bits, 3)

@@ -34,13 +34,13 @@ def evenParitySeven : Finset (BitVec 7) :=
 
 theorem evenParitySeven_eq_evenParitySupport :
     evenParitySeven = evenParitySupport 7 := by
-  native_decide
+  decide +kernel
 
 theorem evenParitySeven_nonempty : evenParitySeven.Nonempty := by
-  native_decide
+  decide +kernel
 
 theorem evenParitySeven_card : evenParitySeven.card = 64 := by
-  native_decide
+  decide +kernel
 
 /-- The explicit distribution used in the cubic lower bound. -/
 noncomputable def evenParitySevenDistribution : Distribution (BitVec 7) :=
@@ -60,6 +60,11 @@ theorem evenParitySevenDistribution_support :
 /-- Alternating sign, chosen positive on odd parity. -/
 def paritySevenDirectionRat (assignment : BitVec 7) : ℚ :=
   if paritySeven assignment then 1 else -1
+
+theorem paritySevenDirectionRat_eq_evenParityDirectionRat :
+    ∀ visible : BitVec 7,
+      paritySevenDirectionRat visible = evenParityDirectionRat 7 visible := by
+  decide +kernel
 
 /-- Real embedding of the alternating direction. -/
 noncomputable def paritySevenDirection (assignment : BitVec 7) : ℝ :=
@@ -89,15 +94,19 @@ def CubicWitnessProductBalance
 alternating seven-cube trade kills every cubic monomial. -/
 theorem cubicWitnessProductBalance_zeroHidden :
     CubicWitnessProductBalance (Fin 0) := by
-  unfold CubicWitnessProductBalance
-  native_decide
+  intro scopes
+  simpa only [paritySevenDirectionRat_eq_evenParityDirectionRat] using
+    sum_evenParityDirectionRat_mul_prod_rationalMonomialValue_eq_zero scopes
+      (by decide)
 
 /-- With one hidden bit, expanding the product of its two cubic slices gives
 only visible monomials of degree at most six, all killed by the same trade. -/
 theorem cubicWitnessProductBalance_oneHidden :
     CubicWitnessProductBalance (Fin 1) := by
-  unfold CubicWitnessProductBalance
-  native_decide
+  intro scopes
+  simpa only [paritySevenDirectionRat_eq_evenParityDirectionRat] using
+    sum_evenParityDirectionRat_mul_prod_rationalMonomialValue_eq_zero scopes
+      (by decide)
 
 /-- Compile the rational monomial identity into annihilation of the product
 of arbitrary real cubic feature polynomials. -/
@@ -242,7 +251,7 @@ theorem cubicWitnessProductBalance_obstructs_evenParitySeven
         simpa [paritySevenDirection, paritySevenDirectionRat, hParity] using
           hPositive.le
   let allTrue : BitVec 7 := fun _ => true
-  have hAllTrueParity : paritySeven allTrue = true := by native_decide
+  have hAllTrueParity : paritySeven allTrue = true := by decide +kernel
   have hAllTrueOutside : allTrue ∉ evenParitySeven := by
     simp [evenParitySeven, hAllTrueParity]
   have hAllTruePositive :
@@ -309,7 +318,7 @@ theorem paritySevenSquarePolynomial_eval :
     ∀ joint : Assignment (Sum (Fin 7) (Fin 2)),
       paritySevenSquarePolynomial.eval joint =
         paritySevenWeightedDifference joint ^ 2 := by
-  native_decide
+  decide +kernel
 
 theorem paritySevenSquarePolynomial_nonnegative
     (joint : Assignment (Sum (Fin 7) (Fin 2))) :
@@ -324,12 +333,16 @@ def paritySevenLiftedSet :
 
 theorem paritySevenLiftedSet_nonempty :
     paritySevenLiftedSet.Nonempty := by
-  native_decide
+  decide +kernel
 
 theorem paritySevenLiftedSet_mapsTo :
     ∀ joint ∈ paritySevenLiftedSet,
       projectObs joint ∈ evenParitySeven := by
-  native_decide
+  have hParity : ∀ joint : Assignment (Sum (Fin 7) (Fin 2)),
+      paritySevenWeightedDifference joint = 0 → paritySeven (projectObs joint) = false := by
+    decide +kernel
+  intro joint hJoint
+  exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, hParity joint (Finset.mem_filter.mp hJoint).2⟩
 
 /-- Hamming weight of a visible seven-bit assignment. -/
 def paritySevenVisibleWeight (visible : BitVec 7) : Nat :=
@@ -351,14 +364,30 @@ def paritySevenJointExtension
 theorem paritySevenJointExtension_mem :
     ∀ visible ∈ evenParitySeven,
       paritySevenJointExtension visible ∈ paritySevenLiftedSet := by
-  native_decide
+  have hZero : ∀ visible : BitVec 7,
+      paritySeven visible = false →
+        paritySevenWeightedDifference (paritySevenJointExtension visible) = 0 := by
+    decide +kernel
+  intro visible hVisible
+  exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, hZero visible (Finset.mem_filter.mp hVisible).2⟩
 
 theorem paritySevenJointExtension_unique :
     ∀ visible ∈ evenParitySeven,
       ∀ joint ∈ paritySevenLiftedSet,
         projectObs joint = visible →
           joint = paritySevenJointExtension visible := by
-  native_decide
+  have hUnique : ∀ visible : BitVec 7, ∀ latent : Assignment (Fin 2),
+      paritySeven visible = false →
+        paritySevenWeightedDifference (jointAssignment visible latent) = 0 →
+          jointAssignment visible latent = paritySevenJointExtension visible := by
+    decide +kernel
+  intro visible hVisible joint hJoint hObs
+  have hDecompose : jointAssignment visible (projectLat joint) = joint := by
+    rw [← hObs]
+    exact jointAssignment_projectObs_projectLat joint
+  have hZero := (Finset.mem_filter.mp hJoint).2
+  rw [← hDecompose] at hZero ⊢
+  exact hUnique visible (projectLat joint) (Finset.mem_filter.mp hVisible).2 hZero
 
 theorem paritySevenLiftedSet_uniqueExtension :
     ∀ visible ∈ evenParitySeven,

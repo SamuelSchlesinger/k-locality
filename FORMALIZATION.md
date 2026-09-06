@@ -1,9 +1,11 @@
 # Paper-to-Lean theorem manifest
 
 This file is the coverage contract between `main.tex` and the `KLocality`
-library.  Every theorem-like environment in the manuscript appears exactly
-once below.  A result is **checked** only when the full paper-facing statement
-is proved without `sorry`, `admit`, or a project-local axiom.  A narrower
+library. Every theorem, lemma, proposition, corollary, and conjecture environment
+in the manuscript appears exactly once below; definitions, remarks, and
+illustrative examples are outside that inventory. A result is **checked** only
+when the full paper-facing statement is proved without `sorry`, `admit`, or a
+project-local axiom. A narrower
 theorem, a derivation from an unconstructed bridge hypothesis, or a finite
 validation is **partial**, not checked.
 
@@ -69,7 +71,7 @@ identifiers, while prose names and Lean implementation names may evolve.
 | `prop:parity` | Parity localization | partial | `evenParity_size_le_of_hasKLocalization` and `evenParity_localizationComplexity_gt` in `KLocality.UniformParityLowerBound` prove the manuscript's lower bound uniformly: every `k`-localization with `ell` hidden bits satisfies `n <= k * 2^ell`. `evenParity_has_twoLocalization_of_lt_two_pow` in `KLocality.UniformParityUpperBound` constructs a symbolic quadratic Hamming-weight lift whenever `n < 2^(ell+1)`. Their overlap gives the infinite exact family `evenParity_cubic_exact_family`: `LC_3(U_even, 3*2^ell+1)=ell+1` for `ell>=1`. The proof is parameterized rather than bounded enumeration. The manuscript's improved upper bound using `floor(k/2)` weight classes and its exact general quadratic formula remain absent. |
 | `prop:hierarchy` | Strict adjacent hierarchy | open | Requires the witness-product bound and a checked weighted one-bit lift. |
 | `prop:positive-no-latent` | No-latent characterization | checked | `localizationComplexity_eq_zero_iff_fullSupport_normalizedGibbs` in `KLocality.NoLatent` proves the exact normalized degree-`k` Gibbs characterization; `isKLocalMarginal_iff_fullSupport_logDensity` gives the equivalent log-density formulation, and `hasKLocalization_zero_iff_isKLocalMarginal` checks the zero-latent coordinate identification. |
-| `prop:positive-hierarchy` | Full-support adjacent hierarchy | partial | `boostedFourDistribution_localizationComplexity_eq_one` in `KLocality.CubicFullSupportExample` proves the concrete rational cubic instance `LC_3(D)=1` for the full-support four-bit law with weights `2/17` at `1111` and `1/17` elsewhere; the matching lift is even quadratic but lies on a proper support face. The manuscript's uniform theorem for every `k>=2` and `n>=k+1`, including its strictly positive one-hidden lift, still requires the soft-plus coefficient argument and tensoring with uniform coordinates. |
+| `prop:positive-hierarchy` | Full-support adjacent hierarchy | partial | `boostedPoint_localizationComplexity_eq_one` in `KLocality.UniformBoostedPoint` proves the rational boosted-point family has `LC_k(D)=1` for every `2<=k<n`; locality at ambient order gives `LC_n(D)=0`. In particular, taking `n=k+1` gives strict adjacent separation for every `k>=2`. The four-bit instance is also checked in `KLocality.CubicFullSupportExample`. These lifts lie on boundary faces. The manuscript's full conclusion in every larger ambient dimension and its strictly positive one-hidden lift still require the soft-plus and uniform-coordinate argument. |
 | `cor:noisy-parity` | Noisy parity | open | Depends on exact quadratization complexity and zero-temperature transfer. |
 | `cor:superincreasing` | Superincreasing Gibbs rays | open | Requires the determinant/root-bound argument and zero-temperature transfer. |
 | `lem:subcube-degree` | Boolean subcube degree test | open | Canonical multilinear Boolean expansion and iterated finite differences are not yet packaged. |
@@ -101,14 +103,16 @@ superlinear asymptotic directly.
 ## Completion gates
 
 The companion is complete only when all rows other than `conj:interior` are
-**checked**, every row names its Lean declaration, and all of the following
-commands succeed on a clean worktree:
+**checked**, every row names its Lean declaration, and the repository gate
+succeeds:
 
 ```bash
-lake build -KwarningAsError=true
-rg -n '\bsorry\b|\badmit\b|^\s*axiom\b' KLocality Main.lean KLocality.lean
+make check
 ```
 
-The placeholder search must be empty.  The final audit must also compare this
-table against the theorem-like environments in the current `main.tex`, so a
-new manuscript result cannot silently fall outside the Lean coverage claim.
+The gate checks that this table covers the current manuscript exactly once,
+that every library module is imported, and that proof placeholders are absent.
+It builds Lean with warnings as errors, audits every project declaration's
+axiom dependencies, and runs the finite validators. A passing gate permits
+open and partial rows: it does not mean the companion is complete or verify
+the semantic correspondence between a manuscript statement and a Lean theorem.

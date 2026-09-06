@@ -9,9 +9,6 @@ older 2^(n-1)-1 universal-approximation bound.
 Dependencies: Python 3 standard library only.
 """
 
-from math import ceil
-
-
 # First column of Montufar--Rauh Table 2.  The paper states that U(n,n) is
 # exact for n <= 9; later entries are published upper bounds.
 STAR_COVER_UPPER = {
@@ -33,7 +30,7 @@ STAR_COVER_UPPER = {
 
 def dimension_lower_bound(n: int) -> int:
     """Smallest m for which (n+1)(m+1)-1 can reach 2^n-1."""
-    return ceil((2**n) / (n + 1)) - 1
+    return (2**n + n) // (n + 1) - 1
 
 
 def brute_dimension_lower_bound(n: int) -> int:

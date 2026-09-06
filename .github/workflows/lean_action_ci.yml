@@ -1,14 +1,50 @@
-name: Lean Action CI
+name: Research checks
 
 on:
   push:
   pull_request:
   workflow_dispatch:
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+permissions:
+  contents: read
 
+jobs:
+  lean:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
       - uses: leanprover/lean-action@v1
+        with:
+          build-args: "-KwarningAsError=true"
+      - name: Audit project axiom dependencies
+        run: lake env lean -DwarningAsError=true scripts/check_axioms.lean
+      - name: Check theorem dependencies and executable identities
+        run: lake env lean -DwarningAsError=true research/check_universal_marginal.lean
+
+  research:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check source and theorem coverage
+        run: make check-source
+      - name: Run finite validators
+        run: make check-finite
+
+  manuscripts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install TeX tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends latexmk biber texlive-latex-extra texlive-science texlive-fonts-recommended cm-super
+      - name: Build and check manuscripts
+        run: make paper notes
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manuscripts
+          path: output/pdf/*.pdf
+          if-no-files-found: error

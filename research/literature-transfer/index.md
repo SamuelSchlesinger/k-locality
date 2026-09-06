@@ -5,6 +5,13 @@ Boltzmann machines, marginal models, and pseudo-Boolean reformulations transfer
 to localization complexity and, in turn, to deterministic or nondeterministic
 Boolean circuits.
 
+These notes record the July--August 2026 literature and transfer work. Consult
+the [current manuscript](../../main.tex) and
+[formalization manifest](../../FORMALIZATION.md) for the maintained theorem
+statements and Lean coverage. A result described as resolved here has a
+mathematical argument in the corpus; that word does not assert formalization
+or establish priority against literature published since the audit.
+
 The governing rule is that a result is not called a transfer until its model
 matches the paper's conventions: binary hidden variables, arbitrary
 order-at-most-`k` interactions, exact representation in the closure, and cost
@@ -22,9 +29,8 @@ measured by hidden bits rather than parameters.
   localization.
 - [Circuit transfers](circuits/index.md): deterministic and nondeterministic
   simulations, converses, and a ledger of valid and invalid implications.
-- [Flagship theorem routes](flagship-routes/index.md): three parallel attacks on
-  the remaining significance gap---natural full-support lower bounds, explicit
-  selector obstructions, and consequences for recognized circuit models.
+- [Structured families and recognition](flagship-routes/index.md): full-support
+  lower bounds, selector obstructions, and circuit and recognition consequences.
 - [Master bibliography](sources.md): canonical primary-source entries used by
   every subtopic.
 

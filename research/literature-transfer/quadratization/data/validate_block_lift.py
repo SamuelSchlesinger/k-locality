@@ -74,8 +74,8 @@ def main() -> None:
         assert (penalty == 0) == (z == u * v)
 
     checked = 0
-    for n in range(1, 9):
-        for k in range(2, min(n, 5) + 1):
+    for n in range(9):
+        for k in range(2, 6):
             blocks = balanced_blocks(n, k)
             features = feature_sets(blocks)
             expected = sum(2 ** len(v) - len(v) - 1 for v in blocks)
@@ -100,7 +100,8 @@ def main() -> None:
                     assert zero_assignments == 1
                 checked += 1
 
-    print(f"validated {checked} visible instances; all checks passed")
+    print(f"validated {checked} visible instances for 0<=n<=8, 2<=k<=5; "
+          "all monomials checked; hidden cubes exhausted when feature count<=10")
 
 
 if __name__ == "__main__":

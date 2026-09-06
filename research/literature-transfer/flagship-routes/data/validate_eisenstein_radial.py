@@ -100,10 +100,11 @@ def validate(max_n: int, exhaustive_m: int) -> None:
         q_formula = threshold_formula(m)
         assert q_search == q_formula
 
+        # Raising to the positive integer r gives the exact inequality
+        # 1 <= 2^(n/r) < 4. Hence exp(2^(n/r)-1) < exp(3).
+        assert 1 <= 2**n < 4**r
         max_energy = 2 ** (n / r)
-        assert 1.0 <= max_energy < 4.0
         point_ratio = math.exp(max_energy - 1.0)
-        assert point_ratio < math.e**3
 
         if m <= exhaustive_m:
             for bits in itertools.product((0, 1), repeat=m):

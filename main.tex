@@ -51,7 +51,7 @@ connected, bounded-order hierarchical exponential family.  The resulting
 $k$-localization complexity $\LC_k(D)$ charges only latent coordinates:
 interaction coefficients may be arbitrary reals, hidden variables may
 interact with one another, and the lifted joint law may lie on a boundary
-face.  For every fixed $k$, we determine the worst-case scale up to constants
+face.  For every fixed $k\ge2$, we determine the worst-case scale up to constants
 depending only on $k$:
 \[
   \max_{D\text{ on }\{0,1\}^n}\LC_k(D)=\Theta_k(2^{n/k}).
@@ -96,8 +96,8 @@ bounded-order maximum-entropy model.  Equivalently, we ask for the smallest
 Boolean extension on which both the support and the relative log weights of a
 table are described by interactions of order at most $k$.
 
-Throughout, the ambient interaction hypergraph is complete and the model is
-its topological closure.  We count latent bits rather than parameters or
+Throughout, $k\ge2$, the ambient interaction hypergraph is complete, and the
+model is its topological closure.  We count latent bits rather than parameters or
 coefficient precision, allow hidden--hidden interactions, and permit a
 full-support visible law to be represented by a boundary joint law.  Thus
 $\LC_2$ is not restricted-Boltzmann-machine complexity, and ``fixed
@@ -196,16 +196,17 @@ rational recognition algorithms concern a separate explicit-table input
 model.  We keep these three regimes distinct throughout.
 
 \paragraph{Artifact and verification status.}
-The accompanying repository contains Lean proofs of the local-verification
-and ground-state machinery, the boundary counterexample, and the
-constants-aware NAND-recognizer localization with exact latent-bit
-accounting.  It also contains finite exhaustive or exact-arithmetic checks for
-the block lift, exchangeable construction, selector examples, and
-full-support recognition reduction.  These checks do not machine-verify the
-principal block-lift, marginal-variety, zero-temperature, exchangeable, or
-recognition theorems, which remain manuscript proofs.  The file
-\texttt{VERIFICATION.md} records the theorem-by-theorem boundary and the
-reproducible commands.
+The accompanying Lean library proves the face--Gibbs characterization,
+universal balanced block-feature lift, and general projective marginal-variety
+certificate theorem, including boundary lifts and the dimension bound.  It
+also checks facial conditioning, parts of the Gibbs-reduction calculus,
+constants-aware NAND-recognizer localization, and explicit cubic lower-bound
+families.  The generic almost-everywhere lower bound, explicit general
+certificate-degree bound, zero-temperature transfer, exchangeable theorem,
+recognition algorithms, and circuit converses remain unformalized.  Finite
+validation scripts check selected constructions and identities independently.
+The file \texttt{FORMALIZATION.md} maps each numbered result to its Lean
+coverage; \texttt{VERIFICATION.md} records the evidence and reproducible checks.
 
 \paragraph{Novelty boundary.}
 The face characterization is standard finite exponential-family geometry
@@ -726,39 +727,31 @@ exposed by the sum of the gate and equality penalties.  Compiling the uniform
 source via Corollary~\ref{cor:gibbs-reduction-compilation} recovers the bounds
 in Theorem~\ref{thm:upper-bounds} and its quadratic NAND specialization.
 
-\subsection{A boundary caution}
-
-Consider three bits $X,Y,Z$ with pairwise marginals
+\begin{example}[Positive marginals can force boundary support]
+\label{ex:positive-marginals-boundary}
+Three bits $X,Y,Z$ have pairwise marginals
 \[
 \Pr(X,Y)=\frac1{20}\begin{pmatrix}9&1\\1&9\end{pmatrix},\quad
 \Pr(X,Z)=\frac1{10}\begin{pmatrix}4&1\\1&4\end{pmatrix},\quad
 \Pr(Y,Z)=\frac1{20}\begin{pmatrix}7&3\\3&7\end{pmatrix}.
 \]
-Every local cell is positive, but the feasible joint displayed below gives
-zero mass to $011$ and $100$.  This refutes the claim that local positivity
-implies a strictly positive feasible joint.
-
-For completeness, in lexicographic order $000,001,\ldots,111$, the joint
-probability vector is
+Every local cell is positive.  A feasible joint, in lexicographic order
+$000,001,\ldots,111$, is
 \[
   \frac1{20}(7,2,1,0,0,1,2,7).
 \]
-Direct summation gives the three displayed marginals.  Uniqueness is not needed
-for the obstruction below.
-
-The corrected certificate is already quadratic:
+Yet every feasible joint must vanish at $011$ and $100$: the quadratic energy
 \[
   E(x,y,z)=x-xy-xz+yz=(x-y)(x-z).
 \]
-On the Boolean cube, $E$ equals one at $011$ and $100$ and zero elsewhere.
-The prescribed marginals imply
+equals one at those two states and zero elsewhere, while the marginals force
 \[
   \E[E(X,Y,Z)]
   =\frac12-\frac9{20}-\frac25+\frac7{20}=0.
 \]
-Since $E\ge0$, every feasible joint is supported on $E^{-1}(0)$.  Thus no
-single marginal entry rules out either state; a weighted sum of pairwise
-statistics exposes the global support face.
+Thus a linear combination of local statistics can expose a proper global
+support face even when every local marginal cell is positive.
+\end{example}
 
 \section{Universal feature lifts}\label{sec:universal-lifts}
 

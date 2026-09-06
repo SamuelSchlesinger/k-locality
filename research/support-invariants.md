@@ -1,5 +1,11 @@
 # Invariants that retain the shared witness polynomial
 
+Development notes on the support program and its weight-sensitive extensions.
+The [manuscript](../main.tex) contains the current theorem statements;
+the [formalization manifest](../FORMALIZATION.md) distinguishes their checked
+counterparts from remaining Lean work. Claims of proof in this note refer to
+mathematical arguments, not automatically to formalization.
+
 ## The first repair: retain the sign
 
 If a support `S` has an `ell`-bit degree-`k` ground-state extension

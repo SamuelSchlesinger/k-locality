@@ -23,10 +23,10 @@ def evenParityThree : Finset (BitVec 3) :=
   Finset.univ.filter fun assignment => parityThree assignment = false
 
 theorem evenParityThree_nonempty : evenParityThree.Nonempty := by
-  native_decide
+  decide +kernel
 
 theorem evenParityThree_card : evenParityThree.card = 4 := by
-  native_decide
+  decide +kernel
 
 /-- Alternating rational cube trade, normalized so its positive mass on the
 odd-parity complement is one. -/
@@ -57,7 +57,7 @@ noncomputable def evenParityThreeDualCertificate
     (selector : Selector evenParityThree (Fin 0)) :
     RationalSelectorDualCertificate 2 evenParityThree_nonempty selector where
   coefficient := evenParityThreeTradeCoefficient
-  momentBalance := by native_decide
+  momentBalance := by decide +kernel
   nonnegativeOffGraph := by
     intro joint hOffGraph
     have hOutside : projectObs joint ∉ evenParityThree := by
@@ -66,7 +66,7 @@ noncomputable def evenParityThreeDualCertificate
         (mem_noLatent_selectorGraphDistribution_of_projectObs_mem
           selector joint hVisible)
     simp [evenParityThreeTradeCoefficient, hOutside]
-  outsideTotal := by native_decide
+  outsideTotal := by decide +kernel
 
 /-- The alternating three-cube trade produces genuine pairwise-moment
 leakage for every zero-latent selector. -/

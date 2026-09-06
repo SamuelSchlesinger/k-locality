@@ -206,6 +206,7 @@ def main():
         "--skip-rank", action="store_true", help="skip randomized toric rank evaluation"
     )
     args = parser.parse_args()
+    print(f"parameters={vars(args)}", flush=True)
 
     if args.prefix_bits > 3:
         parser.error("exact kernel construction is intentionally capped at q <= 3")

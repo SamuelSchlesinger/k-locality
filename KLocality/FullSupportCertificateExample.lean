@@ -81,7 +81,7 @@ theorem parityDirectionRat_momentBalance :
       ∑ assignment : BitVec 3,
         parityDirectionRat assignment *
           rationalMonomialValue scope.1 assignment = 0 := by
-  native_decide
+  decide +kernel
 
 /-- Hence the alternating functional annihilates every quadratic canonical
 pseudo-Boolean polynomial. -/
@@ -119,21 +119,21 @@ theorem boostedThree_alternating_log_sum :
       parityDirection assignment * Real.log (boostedThreeWeights assignment)) =
         Real.log (1 / 9) - Real.log (2 / 9) := by
   have h111 : (![true, true, true] : BitVec 3) = allTrueThree := by
-    native_decide
+    decide +kernel
   have h110 : (![true, true, false] : BitVec 3) ≠ allTrueThree := by
-    native_decide
+    decide +kernel
   have h101 : (![true, false, true] : BitVec 3) ≠ allTrueThree := by
-    native_decide
+    decide +kernel
   have h100 : (![true, false, false] : BitVec 3) ≠ allTrueThree := by
-    native_decide
+    decide +kernel
   have h011 : (![false, true, true] : BitVec 3) ≠ allTrueThree := by
-    native_decide
+    decide +kernel
   have h010 : (![false, true, false] : BitVec 3) ≠ allTrueThree := by
-    native_decide
+    decide +kernel
   have h001 : (![false, false, true] : BitVec 3) ≠ allTrueThree := by
-    native_decide
+    decide +kernel
   have h000 : (![false, false, false] : BitVec 3) ≠ allTrueThree := by
-    native_decide
+    decide +kernel
   rw [← bitVecThreeEquiv.symm.sum_comp]
   rw [Fintype.sum_prod_type]
   simp_rw [Fintype.sum_prod_type]

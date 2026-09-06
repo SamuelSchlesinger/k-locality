@@ -78,6 +78,7 @@ def main():
     parser.add_argument("--prime", type=int, default=1_000_003)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
+    print(f"parameters={vars(args)}", flush=True)
 
     random = Random(args.seed)
     columns = sample_fiber(random, args.degree, args.samples, args.steps)

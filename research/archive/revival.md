@@ -1,5 +1,9 @@
 # Revival memo: from local checks to ground-state extensions
 
+> Archived July 2026 development memo. Statements about the "current" draft
+> and pending formalization below describe that checkpoint. See
+> [the current manifest](../../FORMALIZATION.md) for today's proof boundary.
+
 > **Status note (July 2026, second checkpoint).** This memo records the first
 > revival checkpoint.  The current paper has since added a universal
 > balanced-block lift and matching generic lower bound, nonnegative
@@ -120,7 +124,7 @@ The proof has four short ingredients.
 
 ## Why the counterexample supports the repair
 
-For the pairwise marginals in `interior_feasibility_counterexample.tex`, set
+For the pairwise marginals in `interior-feasibility.tex`, set
 
 ```text
 E(x,y,z) = x - xy - xz + yz = (x-y)(x-z).

@@ -66,6 +66,7 @@ def main():
         help="keep pair monomials representing an already-seen visible multiset",
     )
     args = parser.parse_args()
+    print(f"parameters={vars(args)}", flush=True)
 
     field = GF(args.prime)
     random = Random(args.seed)

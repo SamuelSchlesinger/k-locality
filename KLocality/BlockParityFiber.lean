@@ -29,12 +29,12 @@ def parityFourClass (value : Fin 2) : Finset (BitVec 4) :=
 
 theorem parityFourClass_card (value : Fin 2) :
     (parityFourClass value).card = 8 := by
-  fin_cases value <;> native_decide
+  fin_cases value <;> decide +kernel
 
 theorem parityFour_flipBit :
     ∀ (coordinate : Fin 4) (assignment : BitVec 4),
       parityFour (flipBit coordinate assignment) = !parityFour assignment := by
-  native_decide
+  decide +kernel
 
 /-- Even and odd parity have identical Boolean moments of every order at
 most three. -/
@@ -44,12 +44,12 @@ theorem parityFourClass_cubicMoment_eq :
         rationalMonomialValue scope.1 assignment) =
       ∑ assignment ∈ parityFourClass 1,
         rationalMonomialValue scope.1 assignment := by
-  native_decide
+  decide +kernel
 
 theorem parityFourClass_inter_card (left right : Fin 2) :
     ((parityFourClass left) ∩ parityFourClass right).card =
       if left = right then 8 else 0 := by
-  fin_cases left <;> fin_cases right <;> native_decide
+  fin_cases left <;> fin_cases right <;> decide +kernel
 
 /-- The Boolean-tilt response of two parity blocks is exactly one coordinate
 of the `256`-agreement kernel. -/

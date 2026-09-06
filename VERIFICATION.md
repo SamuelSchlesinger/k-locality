@@ -5,7 +5,7 @@ This file records what kind of evidence supports each major claim in
 proof, a finite computation, and a literature check.  None of those categories
 silently substitutes for another.
 
-Status reflected here: 2026-09-05.  The Lean toolchain is
+Status reflected here: 2026-09-06.  The Lean toolchain is
 `leanprover/lean4:v4.29.0-rc2`; `cslib` is pinned to
 `89619147bf2ef78b8f04c66cbb41546d4757554e`.
 
@@ -58,18 +58,32 @@ Status reflected here: 2026-09-05.  The Lean toolchain is
 | Localization-to-circuit converse and natural-proofs proposition | Manuscript proofs; primary-source audit for exact-threshold integerization and Razborov--Rudich | Not Lean formalized |
 | Parity localization and sign-definite-degree lower bound | Generic certificate soundness Lean checked in `KLocality/WitnessProductCertificate.lean`; uniform lower and upper bounds Lean checked in `KLocality/UniformParityLowerBound.lean` and `KLocality/UniformParityUpperBound.lean`; concrete cubic instance Lean checked in `KLocality/CubicParityExample.lean`; source-level check of the Boros--Crama--Rodríguez-Heck formulas | Lean proves symbolically that every `k`-localization of `U_even,n` with `ell` hidden bits satisfies `n <= k * 2^ell`. It also constructs a quadratic `ell`-hidden lift whenever `n < 2^(ell+1)`, with a proved injective binary half-weight encoding and unique uniform extension. Consequently `LC_3(U_even,3*2^ell+1)=ell+1` for every `ell>=1`; the earlier `LC_3(U_even,7)=2` result is the first case. The manuscript's stronger `floor(k/2)` upper construction and exact general quadratic formula remain manuscript-only. |
 | Selector facial-closure duality, rational trade certificates, and block-layer examples | Lean checked in `KLocality/FacialClosure.lean`, `KLocality/SelectorLeakage.lean`, `KLocality/SelectorTrade.lean`, and `KLocality/GroundStateExtension.lean`; a three-cube alternating trade is checked in `KLocality/SelectorTradeExample.lean`; finite block-layer validation by `validate_selector_block_layers.py` | The full selector duality and compilation of a supplied normalized rational dual table into same-marginal leakage are checked. The general rational Farkas alternative, filtered-slice theorem, and unrestricted block-layer direct-sum conjecture remain open |
-| Interior-versus-closure separation | Open conjecture | No example or debordering theorem is claimed |
+| Fixed-error noisy parity and analytic-family TV collapse | Manuscript proofs in Section 8, primary-source check of the classical parity threshold bound, and exact finite validation in `research/validate_robust_parity.py` | For fixed positive error below half the bias, the hidden-bit count is `(1/2) log2(n) + O(1)`, including for strictly positive approximating joints. All four approximation results remain unformalized; the finite checks do not establish their quantified conclusions. |
+| Interior-versus-closure separation | Open conjecture | No exact separation example or general debordering theorem is claimed |
 
 ## Reproducible checks
+
+The approximation section adds four manuscript results: the analytic
+exchangeable family's TV bound, the classical parity threshold-discrepancy
+bound, the transfer from threshold discrepancy to hidden-bit lower bounds,
+and the matching fixed-error noisy-parity scale. None is Lean formalized.
+Their finite validation and primary-source boundary are documented in
+[research/robust-localization.md](research/robust-localization.md).
+The section's Boolean-complexity discussion derives the general approximate
+lower bound and the reverse inequality from a weighted NAND trace, retaining
+the balanced-target hypothesis and exact gate-wire accounting. The AC0
+comparison cites Section 5 of Aspnes--Beigel--Furst--Rudich. These observations
+are manuscript arguments; they add no Lean coverage or new standard-circuit
+lower bound.
 
 Run `make all` from the repository root for the complete default gate. The
 [Makefile](Makefile) provides these individual targets:
 
 | Target | What success establishes |
 |---|---|
-| `make check-source` | The manuscript's 49 theorem/lemma/proposition/corollary/conjecture environments match the manifest exactly once; statuses, local links, imports, and source checks pass. Regression tests exercise missing coverage, a misclassified conjecture, an orphaned module, and broken artifacts |
+| `make check-source` | The manuscript's 53 theorem/lemma/proposition/corollary/conjecture environments match the manifest exactly once; statuses, local links, imports, and source checks pass. Regression tests exercise missing coverage, a misclassified conjecture, an orphaned module, and broken artifacts |
 | `make check-lean` | The pinned library builds with warnings as errors; every project declaration passes the axiom audit; the selected theorem audit and eight rational-identity executions pass |
-| `make check-finite` | Six Python standard-library validators pass on their declared finite ranges, including reproduction of the explicit sextic profile pairing |
+| `make check-finite` | Seven Python standard-library validators pass on their declared finite ranges, including robust-parity arithmetic and reproduction of the explicit sextic profile pairing |
 | `make paper` | The main manuscript, bibliography, and references build to `output/pdf/main.pdf` with no unresolved references or overflowing boxes |
 | `make notes` | The companion note builds to `output/pdf/explicit-lower-bounds.pdf` under the same log checks |
 | `make check-sage` | Optional exact block-parity identities and seeded finite-field rank evaluations run for prefix widths 2 and 3; requires SageMath |
@@ -120,8 +134,44 @@ The sampled toric evaluation matrices also had full column rank (40 by 16 and
 The 42-page manuscript and nine-page companion note were rebuilt with TeX
 Live 2025 and visually inspected. Both passed the reference and overflow
 checks. Python validation used Python 3.14.5. The GitHub workflow runs the
-default checks on future pushes and pull requests; no hosted CI run is claimed
-for this uncommitted worktree.
+default checks on pushes and pull requests; this local record does not certify
+a hosted CI run.
+
+### Approximation milestone: 2026-09-05
+
+The approximation worktree passed `make all`. After the final manuscript
+refinement for strictly positive approximating joints, `make paper` and
+`make check-source` passed. The unchanged Lean library built successfully
+and passed its whole-project and selected-declaration axiom audits.
+
+The new rational validator checked 32,896 binomial-bound cases, 2,304
+polynomial coefficient vectors, 118,080 joint-table/sign/bias combinations,
+and 3,072 window constructions. Of the window cases, 2,924 discard positive
+mass. These are the finite ranges stated in the research note.
+
+The final 45-page manuscript was rendered and visually inspected, with
+detailed review of the abstract and the new approximation section on pages
+18--20. The bibliography, references, and overflow checks passed. The
+nine-page companion note was unchanged and passed its existing log checks.
+Local logs are `output/robust-validation.log` and
+`output/robust-paper-final.log`; generated outputs are ignored.
+This worktree record does not claim a Lean proof of the new results or a
+hosted CI run.
+
+### Boolean-complexity integration: 2026-09-06
+
+The integrated manuscript passed `make all`: source coverage remained at
+53 named results, all seven finite validators passed, and the unchanged Lean
+library passed its build, whole-project axiom audit, selected theorem audits,
+and executable identity checks. The AC0 discussion was checked against
+Section 5 of Aspnes--Beigel--Furst--Rudich.
+
+The 45-page manuscript was rendered and visually inspected, including the
+general correlation transfer and weighted circuit construction on page 20.
+The bibliography, references, and overflow checks passed. The companion note
+was unchanged and passed its log checks. The local log is
+`output/boolean-transfer-validation.log`. This record establishes neither
+new Lean coverage nor a hosted CI result.
 
 ## Publication and novelty boundary
 
@@ -135,7 +185,7 @@ appropriate before submission.
 
 The paper's use of “Gibbs model” always includes the topological closure.  Its
 principal upper constructions may use boundary joint laws, arbitrary real
-coefficients, and hidden--hidden interactions.  Claims about positive
-finite-parameter Boltzmann machines, restricted Boltzmann machines,
-coefficient complexity, or approximate representation require separate
-theorems and are not implied here.
+coefficients, and hidden--hidden interactions. The approximation results
+retain those conventions. Claims about positive finite-parameter joint
+models, restricted Boltzmann machines, or coefficient complexity require
+separate theorems.

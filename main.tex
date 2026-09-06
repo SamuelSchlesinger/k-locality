@@ -69,6 +69,12 @@ temperature one
 has $\LC_k(D_n)=\Theta_k(n^{1/k})$ and likelihood ratio below $e^3$.
 Thus a closed-form, uniformly conditioned law attains the worst exchangeable
 scale even though the competing lifted models may use boundary faces.
+This analytic family approaches uniform in total variation.  For a rational
+alternative, fixed-bias noisy parity
+$P_{n,\beta}(x)=2^{-n}(1+\beta(-1)^{|x|})$, $0<\beta<1$, has approximate
+localization complexity $\frac12\log_2 n+O_{k,\beta,\varepsilon}(1)$ at every
+fixed error $0<\varepsilon<\beta/2$, using polynomial-threshold discrepancy
+for the lower bound and a central Hamming-weight encoding for the upper bound.
 
 The marginal obstruction yields exact polynomial certificates and effective
 hard rational Gibbs rays.  A complementary theorem transfers arbitrary
@@ -130,6 +136,12 @@ bound and exact eliminants.  The same machinery, combined with facial
 conditioning and an Eisenstein--Lindemann argument, yields a closed-form
 exchangeable law whose probabilities remain within a universal constant ratio
 but whose localization complexity grows as $\Theta_k(n^{1/k})$.
+Exactness matters: this analytic family is $O(n^{-1/2})$ from uniform in
+total variation.  A different exchangeable family, assigning even strings
+three times the probability of odd strings, retains a logarithmic hidden-bit
+lower bound throughout every fixed total-variation ball of radius below
+$1/4$.  More precisely, its approximate complexity is
+$\frac12\log_2 n+O_{k,\varepsilon}(1)$.
 
 Circuit traces provide a useful contrast rather than the source of these
 separations.  Fan-in-two computations have quadratic ground-space encodings,
@@ -152,6 +164,14 @@ The primary theorem chain is as follows.
   (Theorems~\ref{thm:universal-lift} and~\ref{thm:generic-positive},
   Corollary~\ref{cor:worst-case}, and
   Theorem~\ref{thm:exchangeable-window}).
+  \item \emph{A lower bound stable under approximation.}
+  Threshold discrepancy bounds the contribution of each hidden assignment
+  after clipping its visible density.  Combined with a classical parity
+  bound for polynomial thresholds, this gives
+  $\frac12\log_2 n-O_{k,\beta,\varepsilon}(1)$ hidden bits for fixed-bias
+  noisy parity at total-variation error $\varepsilon<\beta/2$.
+  Encoding only central Hamming weights gives the matching upper bound
+  (Theorem~\ref{thm:robust-noisy-parity}).
   \item \emph{Algebraic certificates and tropical transfer.}
   The marginal ideal supplies exact hidden-bit lower-bound certificates and
   computable hard rational Gibbs rays with effective cold intervals.  The
@@ -189,11 +209,12 @@ complexity-theoretically.
 \paragraph{Complexity-theoretic status.}
 The paper does not prove a new lower bound for a standard circuit class.  Its
 circuit statements are simulations and barriers: they identify what a strong
-explicit flat-support localization bound would imply.  The unconditional
-structured lower bound is instead weight-sensitive, has full support, and uses
-transcendental probabilities despite its succinct closed form.  The dense
-rational recognition algorithms concern a separate explicit-table input
-model.  We keep these three regimes distinct throughout.
+explicit flat-support localization bound would imply.  The exchangeable
+$\Theta_k(n^{1/k})$ lower bound uses transcendental probabilities and exact
+representation.  Noisy parity with bias $\beta=1/2$ has rational probabilities and a
+logarithmic lower bound stable under constant total-variation error.  Both
+families have full support.  The dense rational recognition algorithms concern
+a separate explicit-table input model.
 
 \paragraph{Artifact and verification status.}
 The accompanying Lean library proves the face--Gibbs characterization,
@@ -203,7 +224,8 @@ also checks facial conditioning, parts of the Gibbs-reduction calculus,
 constants-aware NAND-recognizer localization, and explicit cubic lower-bound
 families.  The generic almost-everywhere lower bound, explicit general
 certificate-degree bound, zero-temperature transfer, exchangeable theorem,
-recognition algorithms, and circuit converses remain unformalized.  Finite
+approximation results, recognition algorithms, and circuit converses remain
+unformalized.  Finite
 validation scripts check selected constructions and identities independently.
 The file \texttt{FORMALIZATION.md} maps each numbered result to its Lean
 coverage; \texttt{VERIFICATION.md} records the evidence and reproducible checks.
@@ -404,8 +426,9 @@ arbitrary real parameters and boundary limits.  This convention makes the
 comparison with exact finite-description circuits intentionally asymmetric;
 for example, a uniform-seed exact generator does not exist for a nondyadic
 law.  The rational certificates below show that large localization complexity
-is not confined to transcendental tables, but coefficient-bounded and
-approximate versions are distinct measures and remain open.
+is not confined to transcendental tables.  Section~\ref{sec:approximation}
+defines the total-variation approximation measure and proves its noisy-parity
+scale; coefficient-bounded variants remain separate research questions.
 
 \begin{proposition}[Universal existence]\label{prop:existence}
 Every distribution $D$ has a $2$-localization with at most $|S|$ latent bits.
@@ -1633,6 +1656,266 @@ Gruber \cite[Lemma~5.1]{anthony16}.  The new ingredients are facial
 conditioning, the Eisenstein--Lindemann specialization, and the resulting
 inverse-temperature-one target-law localization lower bound.
 
+\section{Approximation and robust noisy parity}
+\label{sec:approximation}
+
+Let $U_n$ be uniform on $\bits^n$.  For $\varepsilon\ge0$ and probability
+laws on the same cube put
+\[
+  \operatorname{TV}(D,P)=\frac12\sum_x|D(x)-P(x)|,
+  \qquad
+  \LC_{k,\varepsilon}(D)
+  =\min_{\operatorname{TV}(D,P)\le\varepsilon}\LC_k(P).
+\]
+The minimum is finite for $k\ge2$, and $\LC_{k,0}=\LC_k$.
+The approximating joint model retains all the paper's conventions, including
+boundary support, arbitrary coefficients, and hidden--hidden interactions.
+
+\begin{proposition}[Approximation of the analytic exchangeable family]
+\label{prop:exchangeable-tv-collapse}
+For the family $D_n$ in Theorem~\ref{thm:exchangeable-window}, $n\ge1$,
+\[
+  \operatorname{TV}(D_n,U_n)
+  \le \frac{e^3\log 2}{\sqrt n}.
+\]
+Consequently, for every fixed $\varepsilon>0$ and $k\ge2$,
+$\LC_{k,\varepsilon}(D_n)=0$ for all sufficiently large $n$.
+\end{proposition}
+
+\begin{proof}
+Write $r=2^{\lfloor\log_2(n+1)\rfloor}$ and $w(s)=\exp(-2^{s/r})$.
+On $0\le s\le n$, $w(s)\ge e^{-4}$ and
+$|w'(s)|\le(\log 2)/(er)$, since $u e^{-u}\le e^{-1}$ for $u\ge1$.
+For $S\sim\operatorname{Bin}(n,1/2)$ put $a=\E w(S)$.
+Then $\E|S-n/2|\le\sqrt n/2$, and
+\[
+ \operatorname{TV}(D_n,U_n)
+ =\frac{\E|w(S)-a|}{2a}
+ \le\frac{\E|w(S)-w(n/2)|}{a}
+ \le\frac{e^3\log 2\,\sqrt n}{2r}
+ \le\frac{e^3\log 2}{\sqrt n}.
+\]
+The last step uses $2r>n+1$.  Uniform has a zero-hidden localization.
+\end{proof}
+
+For a balanced function $f:\bits^n\to\{-1,1\}$, meaning $\E_{U_n}f=0$,
+define its degree-$k$ threshold discrepancy by
+\[
+ \Delta_k(f)=
+ \sup_{\deg p\le k}
+ \left|\E_{U_n}\bigl[f(x)\,1_{\{p(x)\ge0\}}\bigr]\right|.
+\]
+The supremum is over real multilinear polynomials.
+
+\begin{lemma}[Parity threshold discrepancy]
+\label{lem:parity-threshold-discrepancy}
+Let $\chi_n(x)=(-1)^{|x|}$ and $0\le k<n$.  Then
+\[
+ \Delta_k(\chi_n)
+ \le B_{n,k}:=
+ \frac12-2^{-n}\sum_{j=0}^{\lfloor(n-k-1)/2\rfloor}\binom nj
+ \le\frac{k+1}{2\sqrt{n+1}}.
+\]
+\end{lemma}
+
+\begin{proof}
+Use the dimension argument of Aspnes, Beigel, Furst, and Rudich
+\cite[Theorem~2.2]{abfr94}.
+Perturb the constant coefficient of $p$ to make its signs strict while
+preserving its threshold set.
+Put $m=\lfloor(n-k-1)/2\rfloor$.
+If its error set $A$ against $\chi_n$ had fewer than
+$\sum_{j=0}^m\binom nj$ points, a nonzero multilinear polynomial $q$ of
+degree at most $m$ would vanish on $A$.
+Then $\E_{U_n}\chi_n p q^2>0$, contradicting parity orthogonality since
+$\deg(pq^2)<n$.  Apply this also to $-p$ to obtain the first bound.
+By binomial symmetry, $B_{n,k}$ is half the mass of at most $k+1$ central
+layers.  The estimate
+$2^{-n}\binom n{\lfloor n/2\rfloor}\le(n+1)^{-1/2}$ proves the second.
+\end{proof}
+
+\begin{lemma}[Threshold discrepancy transfer]
+\label{lem:threshold-discrepancy-transfer}
+Let $f:\bits^n\to\{-1,1\}$ be balanced, let $0<\beta\le1$, and set
+$D_{f,\beta}(x)=2^{-n}(1+\beta f(x))$.
+Every visible law $P$ with a $k$-localization using $\ell$ hidden bits satisfies
+\[
+ \operatorname{TV}(D_{f,\beta},P)
+ \ge \frac{\beta-(1+\beta)2^\ell\Delta_k(f)}{2}.
+\]
+\end{lemma}
+
+\begin{proof}
+Let $Q$ be the joint law, and write
+$u_h(x)=2^nQ(x,h)$ and $u(x)=\sum_hu_h(x)=2^nP(x)$.
+The face--Gibbs theorem gives
+\[
+ Q(x,h)=Z^{-1}1_{\{E(x,h)=0\}}\exp(\theta(x,h)),
+ \qquad E\ge0,\quad \deg E,\deg\theta\le k.
+\]
+For every $h$ and $t>0$, the set $\{x:u_h(x)>t\}$ is a degree-$k$
+polynomial threshold set.  Indeed, on $E_h=0$ its defining inequality is
+$\theta_h+n\log2-\log Z-\log t>0$; subtracting $M E_h$ for sufficiently
+large $M$ makes it negative at all other cube points.  Strict and weak
+thresholds are interchangeable by a small constant shift on the finite cube.
+This argument includes empty hidden slices.
+
+Put $T=1+\beta$ and $v_h=\min(u_h,T)$.  Integrating the superlevel indicators
+over $0<t<T$ gives
+\[
+ \left|\E_{U_n} f v_h\right|\le T\Delta_k(f).
+\]
+Let $A=\{f=1\}$ and $B=\{f=-1\}$.  Since
+$\min(\sum_hu_h,T)\le\sum_h\min(u_h,T)$,
+\[
+ \E_{U_n}1_A\min(u,T)
+ \le \sum_h\E_{U_n}1_Av_h
+ \le \sum_h\E_{U_n}1_Bv_h+2^\ell T\Delta_k(f)
+ \le P(B)+2^\ell T\Delta_k(f).
+\]
+If $\eta=\operatorname{TV}(D_{f,\beta},P)$, the left side is at least
+$(1+\beta)/2-\eta$, by the total probability deficit on $A$.
+Also $P(B)\le(1-\beta)/2+\eta$.
+Rearranging proves the claim.
+\end{proof}
+
+\begin{theorem}[Robust noisy-parity scale]
+\label{thm:robust-noisy-parity}
+Fix $k\ge2$ and $0<\beta<1$.  For $n\ge1$ define
+\[
+ P_{n,\beta}(x)=2^{-n}(1+\beta(-1)^{|x|}).
+\]
+This law is exchangeable, has full support, and has likelihood ratio
+$(1+\beta)/(1-\beta)$.  For $n>k$ and $0<\varepsilon<\beta/2$, put
+$R=\left\lceil\sqrt{(1+\beta)n/(4\varepsilon)}\right\rceil$.
+Then
+\[
+ \frac12\log_2(n+1)
+ -\log_2\frac{(1+\beta)(k+1)}{2(\beta-2\varepsilon)}
+ \ \le\ \LC_{k,\varepsilon}(P_{n,\beta})
+ \ \le\ \left\lceil\log_2(2R+2)\right\rceil.
+\]
+In particular, for every such fixed $\varepsilon$,
+\[
+ \LC_{k,\varepsilon}(P_{n,\beta})
+ =\frac12\log_2 n+O_{k,\beta,\varepsilon}(1).
+\]
+The same asymptotic holds when approximating joint laws must be strictly
+positive.
+For every $\varepsilon\ge\beta/2$,
+$\LC_{k,\varepsilon}(P_{n,\beta})=0$.
+\end{theorem}
+
+\begin{proof}
+For any approximating localization, the preceding two lemmas give
+\[
+ 2^\ell\ge
+ \frac{2(\beta-2\varepsilon)\sqrt{n+1}}{(1+\beta)(k+1)},
+\]
+proving the lower bound.
+
+For the upper bound let $\ell=\lceil\log_2(2R+2)\rceil$,
+$a=\lfloor n/2\rfloor-R$, and
+$J(h)=\sum_{j=0}^{\ell-1}2^j h_j$.
+The nonnegative quadratic energy
+\[
+ E(x,h)=\bigl(|x|-a-J(h)\bigr)^2
+\]
+has exactly one zero above each $x$ whose Hamming weight belongs to
+$I=\{a,\ldots,a+2^\ell-1\}$, and no zeros otherwise.
+On this graph, the parity of $|x|$ is determined by $a+h_0$.
+A potential affine in $h_0$ can therefore assign weights $1+\beta$ and
+$1-\beta$ to even and odd visible strings, respectively.
+The face--Gibbs theorem produces a quadratic localization of
+$P_{n,\beta}(\mathord\cdot\mid |x|\in I)$ using $\ell$ hidden bits.
+
+The interval $I$ contains every integer $s$ with $|s-n/2|\le R$.
+Chebyshev's inequality for $S\sim\operatorname{Bin}(n,1/2)$ gives
+\[
+ P_{n,\beta}(|x|\notin I)
+ \le (1+\beta)\Pr(|S-n/2|>R)
+ \le \frac{(1+\beta)n}{4R^2}\le\varepsilon.
+\]
+Conditioning changes a law in total variation by exactly the discarded mass,
+so this is the required approximation.  Finally,
+$\operatorname{TV}(P_{n,\beta},U_n)=\beta/2$.
+
+To obtain strictly positive joint laws, use the window construction at error
+$\varepsilon/2$, and replace its face-supported joint by
+$Q_M(x,h)\propto\exp(\theta(x,h)-M E(x,h))$.
+As $M\to\infty$, these positive quadratic Gibbs laws converge to the
+constructed joint in total variation, because the state space is finite.
+Marginalization cannot increase that distance, so a sufficiently large finite
+$M$ gives total error at most $\varepsilon$ with the same hidden budget.
+Replacing $\varepsilon$ by $\varepsilon/2$ changes the upper bound by only an
+additive constant; the lower bound already allows every boundary lift.
+\end{proof}
+
+For the concrete choice $\beta=1/2$, the probabilities are
+$3/2^{n+1}$ on even strings and $1/2^{n+1}$ on odd strings.
+They have $O(n)$-bit rational descriptions and ratio three.
+At error $\varepsilon=1/16$ the lower bound becomes
+\[
+ \LC_{k,1/16}(P_{n,1/2})
+ \ge \frac12\log_2(n+1)-\log_2(2(k+1)).
+\]
+This is the fixed-temperature law $D_{n,1/3}$ in
+Corollary~\ref{cor:noisy-parity}.  The threshold argument applies directly
+at this temperature and throughout its stated total-variation neighborhood.
+It uses the number of hidden assignments without assuming conditional
+independence of visible coordinates.  The upper bound may use a boundary
+joint law, in accordance with the resource convention.
+
+\paragraph{Transfer to and from Boolean complexity.}
+\label{par:boolean-transfers}
+The connection with parity lower bounds for $\mathrm{AC}^0$ is direct:
+Aspnes, Beigel, Furst, and Rudich use the same polynomial-threshold obstruction
+to derive bounded-depth circuit lower bounds, including circuits with one
+majority gate \cite[Section~5]{abfr94}.  Here the restriction step fixes the
+hidden assignment while leaving every visible coordinate free.  This exposes
+degree-$k$ energy and potential slices; clipping then allows their contributions
+to be added with a controlled error.
+
+More generally, for $k\ge2$, a balanced $f$, $0<\beta\le1$, $\delta>0$, and
+$0\le\varepsilon<\beta/2$, Lemma~\ref{lem:threshold-discrepancy-transfer} gives
+\[
+ \Delta_k(f)\le\delta
+ \quad\Longrightarrow\quad
+ \LC_{k,\varepsilon}(D_{f,\beta})
+ \ge \log_2\frac{\beta-2\varepsilon}{(1+\beta)\delta}.
+\]
+Thus Boolean threshold-correlation bounds yield robust localization lower
+bounds for biased probability laws.  The resource conversion matters:
+the proof counts $2^\ell$ hidden assignments, so a polynomial lower bound
+on their number gives a logarithmic lower bound on hidden bits.
+
+A transfer in the other direction uses circuit traces.  For the same balanced
+$f$, suppose $0<\beta<1$ and an $s$-gate NAND circuit computes
+$b(x)=(1+f(x))/2$.
+The quadratic gate penalties of Theorem~\ref{thm:nand-synthesis} expose its
+unique trace over every visible input, using $s$ latent gate wires.
+Give the output wire $o$ the affine potential
+\[
+ \theta(o)=\log(1-\beta)
+   +o\log\frac{1+\beta}{1-\beta}.
+\]
+The resulting face--Gibbs law has visible marginal $D_{f,\beta}$, so for
+$k\ge2$ and $\varepsilon\ge0$,
+\[
+ \LC_{k,\varepsilon}(D_{f,\beta})
+ \le \LC_2(D_{f,\beta})\le s.
+\]
+Consequently, approximate localization lower bounds also lower-bound this
+circuit size.  This construction charges all gate wires and uses the paper's
+arbitrary-coefficient, boundary-lift convention.
+
+The present parity argument imports a classical Boolean obstruction.
+Stronger transfers could exploit constraints that its slice-by-slice estimate
+discards: all $E_h$ and $\theta_h$ arise by restriction of common joint
+degree-$k$ polynomials.  Combining that compatibility with positivity or
+marginal geometry is a possible route to sharper localization bounds and,
+through an explicit circuit encoding, stronger circuit consequences.
+
 \section{Dense-table recognition}
 \label{sec:recognition}
 
@@ -2570,9 +2853,18 @@ concrete next tests.
   zero-latent case is in $\mathrm P$.  Close this gap, avoid explicit expansion
   of the hidden cube, and study sampled or succinct input models separately,
   where the dense-table ETH barrier no longer applies.
-  \item \textbf{Robust resources.}  Define coefficient-bounded and
-  $\varepsilon$-approximate localization complexity, and determine which
-  graph lifts, lower-bound certificates, and circuit comparisons survive.
+  \item \textbf{Robust resources.}
+  Theorem~\ref{thm:robust-noisy-parity} determines a logarithmic scale at
+  fixed total-variation error.  Find an explicit family with a
+  superlogarithmic approximate lower bound, and determine the approximate
+  worst-case and exchangeable scales.  Study coefficient-bounded variants
+  and which algebraic certificates and circuit comparisons admit quantitative
+  versions.  Proposition~\ref{prop:exchangeable-tv-collapse} shows that the
+  analytic exchangeable family cannot supply such a fixed-error lower bound.
+  Threshold discrepancy gives a transfer from Boolean correlation bounds;
+  improving on separate slice estimates may require the shared polynomial
+  dependence on the hidden assignment discussed in
+  Section~\ref{sec:approximation}.
   \item \textbf{Interior versus closure.}  Resolve
   Conjecture~\ref{conj:interior}: exhibit a full-support law whose closure
   localization is strictly cheaper than every interior localization, or prove

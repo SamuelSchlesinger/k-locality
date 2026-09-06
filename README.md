@@ -42,9 +42,17 @@ proof are separate evidence; a successful build does not close the gaps.
 | Projective marginal variety, dimension bound, and integer certificates | Proved | Checked; rational identity membership is executable |
 | Generic lower bound and worst-case `Theta_k(2^(n/k))` scale | Proved | Upper bound and algebraic ingredients checked; genericity remains |
 | Exchangeable scale `Theta_k(n^(1/k))` and a bounded likelihood-ratio family | Proved | Open |
+| Fixed-bias noisy parity at fixed positive TV error below half the bias: `(1/2) log2(n) + O(1)` hidden bits | Proved | Open; exact finite validation only |
 | Zero-temperature transfer and dense-table recognition algorithms | Proved | Open |
 | Circuit traces, converse simulations, and support bounds | Proved | Partial; see the manifest for individual statements |
 | Strict benefit from boundary lifts | Conjecture | Open in both |
+
+The robust example gives each even string three times the probability of
+each odd string. Its logarithmic lower bound survives every fixed TV error
+below 1/4. The analytic exchangeable family above, despite its larger exact
+complexity, approaches uniform and eventually needs no hidden bits at any
+fixed positive error. See the [approximation research note](research/robust-localization.md)
+for the proof route and validation boundary.
 
 The library also proves explicit full-support rational cubic lower bounds,
 explained in [the companion note](notes/explicit-lower-bounds.tex). The

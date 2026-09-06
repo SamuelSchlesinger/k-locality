@@ -6,6 +6,9 @@ contains supporting notes, finite validators, and exploratory programs.
 
 ## Reading map
 
+- [Robust localization](robust-localization.md): fixed-error noisy parity,
+  the threshold-discrepancy transfer, the matching central-window lift, and
+  the analytic family's collapse toward uniform.
 - [Explicit lower bounds](../notes/explicit-lower-bounds.tex): a companion to
   the Lean base-coded, Boolean-tilt, and block-parity constructions.
 - [Block-parity fiber](block-parity-fiber.md): the structured Fourier route,
@@ -21,11 +24,12 @@ contains supporting notes, finite validators, and exploratory programs.
 ## Default finite validation
 
 Run `make check-finite` from the repository root with Python 3.10 or newer.
-These six scripts use only the standard library. Assertions must be enabled;
+These seven scripts use only the standard library. Assertions must be enabled;
 the Make target sets `PYTHONOPTIMIZE=0`.
 
 | Script | Scope and interpretation |
 |---|---|
+| [Robust noisy parity](validate_robust_parity.py) | Exact binomial bounds through `n=256`, small polynomial thresholds and clipped mixtures, and Hamming-window lifts through `n=512`; complete finite protocol in the [research note](robust-localization.md) |
 | [Sextic profile matching](generate_sextic_matching.py) | Reproduce the explicit permutation of all 192 expanded profiles and its inverse, as stored and independently kernel-checked in `NonzeroHiddenCertificateExample.lean` |
 | [Block lift](literature-transfer/quadratization/data/validate_block_lift.py) | All `0 <= n <= 8`, `2 <= k <= 5`; quadratic penalty truth table and every visible monomial. Hidden assignments are exhausted only when there are at most 10 feature bits |
 | [RBM bound arithmetic](literature-transfer/rbm/data/check_bounds.py) | Integer parameter counts and transcribed published bounds for `2 <= n <= 14`; no unrestricted-localization lower-bound claim |

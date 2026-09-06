@@ -18,7 +18,7 @@ help:
 	  'make all           Run check, paper, and notes' \
 	  'make check-source  Check theorem coverage, links, imports, and proof placeholders' \
 	  'make check-lean    Build Lean and run the axiom and executable identity checks' \
-	  'make check-finite  Run the six standard-library Python validators' \
+	  'make check-finite  Run the seven standard-library Python validators' \
 	  'make check-sage    Run optional seeded block-parity experiments (requires SageMath)' \
 	  'make archive       Build the historical counterexample writeup'
 
@@ -36,6 +36,7 @@ check-lean:
 	$(LAKE) env lean -DwarningAsError=true research/check_universal_marginal.lean
 
 check-finite:
+	PYTHONOPTIMIZE=0 $(PYTHON) research/validate_robust_parity.py
 	PYTHONOPTIMIZE=0 $(PYTHON) research/generate_sextic_matching.py --check
 	PYTHONOPTIMIZE=0 $(PYTHON) research/literature-transfer/quadratization/data/validate_block_lift.py
 	PYTHONOPTIMIZE=0 $(PYTHON) research/literature-transfer/rbm/data/check_bounds.py
